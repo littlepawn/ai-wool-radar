@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>AI 羊毛监控 — 免费模型活动雷达</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f5f1; --surface:#ffffff; --surface2:#eef1ec; --ink:#13201d; --muted:#5b6b66; --line:#dde3dc;
+  --teal:#0c7666; --teal-dark:#09594d; --amber:#b45309; --amber-bg:#fef3c7; --red:#b91c1c; --red-bg:#fee2e2;
+  --green-bg:#dcfce7; --radius:18px;
+  --shadow:0 10px 30px rgba(19,32,29,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0e1413; --surface:#16201e; --surface2:#1c2a27; --ink:#e8efec; --muted:#9db0a9; --line:#2a3a36; --amber-bg:#3a2a0e; --red-bg:#3a1515; --green-bg:#143324; --shadow:0 10px 30px rgba(0,0,0,.35); }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,sans-serif;line-height:1.6}
+a{color:var(--teal);text-decoration:none} a:hover{text-decoration:underline}
+.mono{font-family:"JetBrains Mono",monospace}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 64px}
+.hero{padding:34px 0 8px}
+.hero-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12.5px;color:var(--muted);font-weight:500}
+.pill strong{color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px var(--green-bg)}
+h1{font-family:"Noto Serif SC",serif;font-size:clamp(34px,6vw,56px);line-height:1.05;margin:0 0 12px;letter-spacing:-.01em}
+h1 em{font-style:normal;color:var(--teal)}
+.lede{font-size:17px;color:var(--muted);max-width:760px;margin:0}
+.verdict{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--teal);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.verdict h2{margin:0 0 4px;font-size:18px}
+.verdict p{margin:0;color:var(--muted);font-size:14.5px;max-width:700px}
+.verdict-badge{background:var(--teal);color:#fff;font-weight:700;font-size:13px;padding:6px 12px;border-radius:999px;white-space:nowrap}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 6px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+.kpi b{font-family:"JetBrains Mono",monospace;font-size:30px;display:block;line-height:1}
+.kpi span{font-size:13px;color:var(--muted)}
+@media(max-width:720px){.kpis{grid-template-columns:1fr 1fr}}
+.countdowns{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+@media(max-width:860px){.countdowns{grid-template-columns:1fr}}
+.cd{background:var(--ink);color:#f2f5f3;border-radius:var(--radius);padding:20px}
+@media(prefers-color-scheme: dark){.cd{background:#e8efec;color:#13201d}}
+.cd .label{font-size:12px;letter-spacing:.12em;opacity:.7;text-transform:uppercase;font-weight:700}
+.cd h3{margin:6px 0 2px;font-size:20px}
+.cd .timer{font-family:"JetBrains Mono",monospace;font-size:30px;font-weight:700;margin:8px 0 2px}
+.cd p{margin:0;opacity:.75;font-size:13.5px}
+.controls{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 0 10px;border-bottom:1px solid var(--line);margin-top:18px}
+.search{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:15px;font-family:inherit}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:7px 14px;border-radius:999px;font-size:13.5px;cursor:pointer;font-family:inherit;font-weight:500}
+.chip.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.row2{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center}
+select{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-size:14px}
+.count-note{font-size:13px;color:var(--muted);margin-left:auto}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+@media(max-width:980px){.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow);position:relative}
+.card-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.card-main{flex:1;min-width:0}
+.card-top-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;max-width:46%}
+.wool-score{display:inline-flex;align-items:center;gap:7px;background:var(--teal);color:#fff;border-radius:10px;padding:5px 9px 5px 10px;line-height:1;box-shadow:0 2px 8px rgba(12,118,102,.22);white-space:nowrap}
+.wool-score .wool-label{font-size:11px;font-weight:700;letter-spacing:.02em;opacity:.92}
+.wool-score .wool-num{font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:800;line-height:1}
+@media(max-width:640px){.card{padding:16px}.card-top{gap:10px}.card-top-right{max-width:48%}.card-top-right .tag{white-space:normal;text-align:center;line-height:1.35}.wool-score{padding:5px 7px 5px 8px;gap:5px}.wool-score .wool-num{font-size:20px}.wool-score .wool-label{font-size:10.5px}}
+.vendor{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--teal);text-transform:uppercase}
+.region{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);margin-left:6px;letter-spacing:0}
+.card h3{margin:2px 0 0;font-size:18px;line-height:1.35}
+.tag{font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.tag-limited{background:var(--amber-bg);color:var(--amber)}
+.tag-evergreen{background:var(--green-bg);color:var(--teal-dark)}
+@media(prefers-color-scheme:dark){.tag-evergreen{color:#6ee7b7}}
+.tag-disputed{background:var(--red-bg);color:var(--red)}
+.tag-daily{background:var(--surface2);color:var(--muted)}
+.quota{font-family:"JetBrains Mono",monospace;font-size:21px;font-weight:700}
+.modline{font-size:12.5px;color:var(--muted)}
+.gate-note{margin-top:14px;background:var(--amber-bg);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-size:13.5px}
+.gate-note b{color:var(--amber)}
+.models-list{display:grid;gap:10px;margin-top:8px}
+.m-row{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.m-row .m-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.m-row .m-name{font-weight:700;color:var(--ink);font-size:13.5px;word-break:break-all}
+.m-row .m-total{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--teal);font-size:17px;white-space:nowrap}
+.m-row .m-note{font-size:12.5px;margin-top:4px}
+.m-row .scores{border:none;background:transparent;padding:4px 0 0}
+.go-link{display:inline-block;margin:8px 0 2px;background:var(--teal);color:#fff;font-weight:700;font-size:13.5px;padding:8px 14px;border-radius:10px}
+.go-link:hover{text-decoration:none;opacity:.92}
+a.btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+a.btn:hover{text-decoration:none}
+.scores{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:5px;background:var(--surface2)}
+.srow{display:grid;grid-template-columns:64px 1fr 30px;gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.bar{height:7px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--teal);border-radius:99px}
+.srow b{font-family:"JetBrains Mono",monospace;color:var(--ink);text-align:right}
+.overall{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px;font-size:12.5px;color:var(--muted)}
+.overall b{font-family:"JetBrains Mono",monospace;font-size:20px;color:var(--teal)}
+.desc{font-size:14px;color:var(--muted);margin:0;flex:1}
+.meta{font-size:13px;border-top:1px dashed var(--line);padding-top:10px;display:grid;gap:4px}
+.meta b{color:var(--ink)}
+.live{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--amber)}
+.card-actions{display:flex;gap:8px}
+.btn{flex:1;text-align:center;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.primary{background:var(--teal);color:#fff;border-color:var(--teal)}
+
+details{font-size:13.5px;color:var(--muted)} summary{cursor:pointer;font-weight:600;color:var(--ink)}
+ol.steps{margin:6px 0 0;padding-left:18px}
+section{margin-top:44px}
+.sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.sec-head h2{font-family:"Noto Serif SC",serif;font-size:26px;margin:0}
+.sec-head p{color:var(--muted);margin:0;font-size:14px}
+.excluded{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.ex-row{display:grid;grid-template-columns:230px 120px 1fr;gap:14px;padding:15px 18px;border-bottom:1px solid var(--line);font-size:14px}
+.ex-row:last-child{border-bottom:none}
+@media(max-width:720px){.ex-row{grid-template-columns:1fr}}
+.ex-row b{font-size:14.5px}
+.badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;height:fit-content;text-align:center;white-space:nowrap}
+.badge-red{background:var(--red-bg);color:var(--red)} .badge-amber{background:var(--amber-bg);color:var(--amber)} .badge-grey{background:var(--surface2);color:var(--muted)} .badge-green{background:var(--green-bg);color:var(--teal-dark)}
+@media(prefers-color-scheme:dark){.badge-green{color:#6ee7b7}}
+.ex-row p{margin:0;color:var(--muted)}
+.board{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.b-row{display:grid;grid-template-columns:1fr 118px 1.3fr;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);font-size:13.5px;align-items:center}
+.b-row:last-child{border-bottom:none}
+@media(max-width:720px){.b-row{grid-template-columns:1fr}}
+.b-row .when{font-family:"JetBrains Mono",monospace;font-weight:700}
+.lb-row{display:grid;grid-template-columns:44px 1fr 150px 64px;gap:12px;padding:13px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:14px}
+.lb-row:last-child{border-bottom:none}
+@media(max-width:720px){.lb-row{grid-template-columns:34px 1fr 52px}.lb-row .lb-bars{display:none}}
+.lb-rank{font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:700;color:var(--teal)}
+.lb-total{font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:700;text-align:right}
+.lb-bars{display:grid;gap:3px}
+.lb-bars .srow{grid-template-columns:34px 1fr 24px;font-size:11px}
+.sources{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:720px){.sources{grid-template-columns:1fr}}
+.src{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.src h3{margin:0 0 4px;font-size:16px} .src p{margin:0;font-size:13.5px;color:var(--muted)}
+.src .fresh{font-family:"JetBrains Mono",monospace;font-size:12px;margin-top:8px;display:block}
+.warn{color:var(--amber);font-weight:700}.ok{color:var(--teal);font-weight:700}
+.method{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:980px){.method{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.method{grid-template-columns:1fr}}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.step .n{font-family:"JetBrains Mono",monospace;font-size:26px;color:var(--teal);font-weight:700}
+.step h3{margin:6px 0 4px;font-size:15px}.step p{margin:0;font-size:13px;color:var(--muted)}
+.schedule{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.slot{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-align:center}
+.slot b{font-family:"JetBrains Mono",monospace;font-size:22px;display:block}
+.slot span{font-size:12.5px;color:var(--muted)}
+.slot.next{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+.note{background:var(--surface2);border-radius:14px;padding:18px 20px;font-size:14.5px}
+.note h3{margin:0 0 6px}.note p{margin:0;color:var(--muted)}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+.empty{grid-column:1/-1;text-align:center;padding:36px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--radius)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:50}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="hero-top">
+      <span class="pill">范围 <strong>&nbsp;国内 + 海外大厂 · 文本 / 生图 / 生视频</strong></span>
+    </div>
+    <h1>AI 羊毛<em>监控雷达</em></h1>
+    <p class="lede">这一版把范围扩到全球：国内大厂的一次性发放照旧追，海外大厂（Cloudflare、Agnes、Google、Groq…）本身就免费的常驻档单独立账，每日签到型、生图与生视频方案全部纳入同一套到期监控。本轮再收紧三条口径：<strong style="color:var(--ink)">要绑卡、验证支付方式或先充值才能用的，不再计入主列表</strong>；每张卡都能点开看<strong style="color:var(--ink)">具体免费模型名单</strong>；评分分两层 —— 卡片右上角是<strong style="color:var(--ink)">整个羊毛的易薅·实用综合分</strong>（只看易薅程度和实用性，不含智力/额度），点开明细才看每个具体模型的智力 / 额度 / 实用性分，有官方领取地址的直接放跳转按钮。</p>
+
+    <div class="kpis">
+      <div class="kpi"><b>27</b><span>在追踪的活动 / 免费档（已剔除需绑卡 / 余额计费 2 条）</span></div>
+      <div class="kpi"><b>10</b><span>海外大厂与平台方案</span></div>
+      <div class="kpi"><b>8</b><span>带生图 / 生视频能力的方案</span></div>
+      <div class="kpi"><b>11</b><span>雷达与聚合信息源</span></div>
+    </div>
+
+    <div class="countdowns">
+      <div class="cd">
+        <div class="label">最近截止 · 限时</div>
+        <h3>MiniMax M2 / M3 免费试用</h3>
+        <div class="timer" data-deadline="2026-11-07T08:00:00+08:00">—</div>
+        <p>截止 2026-11-07 约 08:00（北京时间），尚未到 48 小时临期线，预计 11-05 前后重点评估。</p>
+      </div>
+      <div class="cd">
+        <div class="label">限时 · 登录领取</div>
+        <h3>智谱 AutoClaw 登录领 50M</h3>
+        <div class="timer" data-deadline="2026-11-08T23:59:00+08:00">—</div>
+        <p>活动期 2026-11-02 至 11-08，登录领取。英文聚合榜的「40M」与中文官方「50M」为同一活动口径差异，以中文官方为准。</p>
+      </div>
+      <div class="cd">
+        <div class="label">每日型 · 下次重置</div>
+        <h3>每日额度重置倒计时</h3>
+        <div class="timer" data-reset="daily">—</div>
+        <p>七牛 Conatus、ZCode、即梦、可灵、Cloudflare 等每日档按天清零 / 重置：不用就没了，重置前优先把当日额度花在高价值任务上（各平台时区以其官方为准）。</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <input class="search" id="search" type="search" placeholder="搜厂商、模型、活动名… 例如：Cloudflare、Agnes、生图、签到" aria-label="搜索活动">
+    <div class="chips" id="catChips">
+      <button class="chip active" data-cat="all">全部</button>
+      <button class="chip" data-cat="limited">限时 · 一次性领</button>
+      <button class="chip" data-cat="evergreen">本身就免费</button>
+      <button class="chip" data-cat="daily">每日 / 签到型</button>
+      <button class="chip" data-cat="intl">海外大厂</button>
+      <button class="chip" data-cat="cn">国内大厂</button>
+      <button class="chip" data-cat="media">生图 / 生视频</button>
+      <button class="chip" data-cat="client">客户端内活动</button>
+    </div>
+    <div class="row2">
+      <select id="vendorSel" aria-label="按厂商筛选"></select>
+      <select id="sortSel" aria-label="排序">
+        <option value="deadline">排序：即将到期优先</option>
+        <option value="totalScore">排序：易薅实用总分优先</option>
+        <option value="score">排序：最佳模型评分优先</option>
+        <option value="intel">排序：模型智力优先</option>
+        <option value="quotaScore">排序：模型额度评分优先</option>
+        <option value="useScore">排序：模型实用性优先</option>
+        <option value="quota">排序：额度看起来更大优先</option>
+        <option value="vendor">排序：按厂商</option>
+      </select>
+      <span class="count-note" id="countNote"></span>
+    </div>
+  </div>
+
+  <div class="gate-note"><b>纳入标准（本轮起执行）：</b>主列表只收免绑卡、免验证支付方式、免预充值就能真正用上的免费额度；需要实名 / 登录 / 手动领取的不算绑卡，照常收录。每张卡右上角的总分只看易薅程度（45%）和实用性（55%），不含智力 / 额度，方便先挑好领又好用的；点开「免费模型明细」再看每个具体模型的智力 / 额度 / 实用性分。步骤里有「前往官方领取页」按钮的，点一下直达，不用自己搜地址。</div>
+
+  <div class="grid" id="grid"></div>
+
+  <section>
+    <div class="sec-head"><h2>模型评分榜 · 先用哪个模型</h2><p>分数打给具体模型，不打给平台：同一个平台里旗舰模型和凑数小模型分开计。智力 40% + 额度 30% + 实用性 30%，满分 100；生图 / 生视频模型的「智力」按生成质量计。</p></div>
+    <div class="board" id="leaderboard"></div>
+    <div class="note" style="margin-top:12px">
+      <h3>分是怎么打的（两层）</h3>
+      <p><strong style="color:var(--ink)">第一层 · 卡片右上角总分（整个羊毛）：</strong>只由两项算出 —— <strong style="color:var(--ink)">易薅程度占 45%</strong>（注册即用 5 分、一次实名/领取 4 分、每日手动领/签到 3 分、多步迁移/邀请/争议未核实 2 分）＋ <strong style="color:var(--ink)">实用性占 55%</strong>（取该活动最值得用那个模型的实用分），公式为 易薅×20×45% ＋ 实用×20×55%，满分 100。<strong style="color:var(--ink)">这个总分不含智力、不含额度</strong>，只回答「好不好薅、薅到手好不好用」。<strong style="color:var(--ink)">第二层 · 具体模型分（点开明细看）：</strong>每张卡点开「免费模型明细」，能看到每一个免费模型自己的三维分和总分，评分榜也只排具体模型。<strong style="color:var(--ink)">智力</strong>看模型档位（旗舰级 5 分、主流强模型 4 分、够用小模型 2–3 分）；<strong style="color:var(--ink)">额度</strong>看该模型实际能分到多少量与重置方式（每日大额重置 5 分、每日小额或全池共享打折 2–3 分、一次性大额按总量折算）；<strong style="color:var(--ink)">实用性</strong>看接入难度、限流松紧、会不会自动转付费、能否接进 Magpie、商用与水印限制。<strong style="color:var(--ink)">需要绑卡 / 验证支付方式才能用的，整条直接不纳入</strong>；争议项（如 Hy3）实用性直接扣分。</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>到期监控台</h2><p>所有方案统一进这一张表：有固定截止日的跑倒计时，每日 / 每月型的跑重置倒计时，没写截止日的进「长期监测」——政策一变（降额、绑卡、退役）就预警。</p></div>
+    <div class="board" id="expiryBoard"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>生图 / 生视频专栏</h2><p>额度之外更要盯三件事：水印、商用授权、积分过期。下面这栏专记媒体类方案的这些「暗规则」，卡片区点「生图 / 生视频」可筛选同批方案。</p></div>
+    <div class="excluded">
+      <div class="ex-row"><b>即梦 AI（字节）· 图 + 视频</b><span class="badge badge-green">每日型</span><p>每日约 60 积分（不同口径有 60–90 的说法，以登录后显示为准），当日清零、不过夜。中文提示词与剪映协同是强项；免费导出的水印与商用权限以会员页当时说明为准，别默认可商用。</p></div>
+      <div class="ex-row"><b>可灵 AI（快手）· 图 + 视频</b><span class="badge badge-green">每日型</span><p>非会员每日登录赠 66 灵感值（约 6 条标准模式 5 秒视频），当日不结转。硬限制在授权：据白嫖计核实，免费档产出不可商用，且使用时须显著标注由 Kling AI 生成 —— 没水印 ≠ 能商用。近期另有「会员页不再列每日免费积分」的说法，本页标待复核。</p></div>
+      <div class="ex-row"><b>海螺 AI（MiniMax）· 视频</b><span class="badge badge-amber">一次性 + 活动型</span><p>没有常驻公示的每日额度：新用户欢迎积分包授予后仅 3 天有效，是所有方案里最容易「领了忘用直接作废」的一项；新模型上线期可能有每日试用积分，具体数额随活动变动、官方不写死。免费下载带水印。</p></div>
+      <div class="ex-row"><b>Agnes AI · 图 + 视频 + 文本同 Key</b><span class="badge badge-green">促销免费</span><p>少有的一个免费 Key 同时覆盖文本、生图（agnes-image-2.1-flash）与生视频（5 秒短片）的方案。代价是限流紧（视频约 1–2 RPM）且 $0 是促销价，官方明说结束日以平台公告为准 —— 已列入重点监控。</p></div>
+      <div class="ex-row"><b>Cloudflare Workers AI · FLUX 生图</b><span class="badge badge-green">每日型</span><p>每日 10,000 Neurons 与文本共用一个池：第三方实测约可出 57–173 张 FLUX.1 schnell（随尺寸 / 步数浮动）。超额直接报错、不产生账单，做图量大时先算 Neurons 再跑文本任务。</p></div>
+      <div class="ex-row"><b>Leonardo.ai · 生图</b><span class="badge badge-green">每日型</span><p>每日 150 Fast Tokens 重置，强在游戏美术、动漫与风格化插画及画布编辑；免费档作品为公开可见，介意隐私的素材别放。</p></div>
+      <div class="ex-row"><b>Adobe Firefly · 生图</b><span class="badge badge-grey">每月型</span><p>每月 25 个生成积分，量最小，但训练数据为授权素材、商用相对安心，适合「少而正式」的商用配图；与 Creative Cloud 生态绑定深。</p></div>
+      <div class="ex-row"><b>Hugging Face Spaces · 图 + 视频</b><span class="badge badge-grey">排队制</span><p>研究者托管的免费 Demo 集合，无固定张数、靠排队，热门 Space 高峰期限流或排队很久；适合试新模型，不适合当稳定产能。注意：HF Inference Providers 的聊天大模型是按量付费的，不属于免费生图通道。</p></div>
+      <div class="ex-row"><b>Pollinations · 图 + 视频</b><span class="badge badge-red">已剔除 · 不纳入</span><p>曾经的「无限制免费」已经结束：现需 API Key 并按 pollen 余额计费。按本轮新口径（要先有付费余额才能用的不算真免费），已从主列表和本专栏的推荐中移除，只在下方「争议与已排除」留一条记录。</p></div>
+      <div class="ex-row"><b>Cerebras · 文本</b><span class="badge badge-red">已剔除 · 不纳入</span><p>额度本身不差（多家清单口径约 100 万 Tokens/日），但已被指出新增支付方式验证要求 —— 要验证支付方式才能用的，按新口径不进主列表，详见下方「争议与已排除」。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>争议与已排除</h2><p>这一栏和“上新”一样重要 —— 防止把旧活动、拉新和口径冲突误报成新羊毛。</p></div>
+    <div class="excluded">
+      <div class="ex-row"><b>混元 Hy3「延到 11 月 15 日」</b><span class="badge badge-red">未核实 · 争议</span><p>有文章称客户端卡片标「7月6日—11月15日、每日赠送、倍率 0.00」，但官方未发对应延期公告；另一雷达站则称 Hy3 / Hy4 的 0.00x 已于 10-31 结束、官方未续期。结论：在用 WorkBuddy 的，自己打开客户端看 Hy3 卡片小字，不要按 11-15 写进长期预算。</p></div>
+      <div class="ex-row"><b>GitHub Models 已退役</b><span class="badge badge-red">已下线 · 教训</span><p>曾被无数免费清单推荐的 GitHub Models 已于 2026-07-30 整体退役（Playground、目录、推理 API 全部关闭）。教训：常驻免费档也会突然消失，所以本页给每个「本身就免费」的方案都挂了长期监测，而不是收录完就不管。</p></div>
+      <div class="ex-row"><b>Cerebras 免费档</b><span class="badge badge-red">已剔除 · 需验证支付方式</span><p>多家清单仍写「约 100 万 Tokens/日」，但 2026-09 下旬按官方页核查的对比文指出 Cerebras 已新增支付方式验证要求。按本轮口径，需要绑卡 / 验证支付方式才能用的不纳入主列表，本条已从卡片、评分榜和到期监控中移除；哪天它取消验证，再按新活动重新核实收录。</p></div>
+      <div class="ex-row"><b>Pollinations</b><span class="badge badge-red">已剔除 · 改为余额计费</span><p>曾经的「免注册、无限制」生图通道已改为需要 API Key 并按 pollen 余额计费，本质是付费余额制，不再是真免费。已从主列表移除，只保留这条政策变动记录。</p></div>
+      <div class="ex-row"><b>腾讯 WorkBuddy 受邀新人 2000 积分</b><span class="badge badge-grey">已过滤 · 拉新</span><p>官方邀请页写至 2026-11-30，但另有多源称已于 10-31 截止，日期冲突；且本身属拉新门槛类，按监控规则过滤，不计入新活动。</p></div>
+      <div class="ex-row"><b>阿里 Qoder · Qwen3.8-Flash</b><span class="badge badge-grey">旧活动</span><p>2026-09-18 起、已延期、结束时间另行公告。延期不等于新活动，无新规则变化，不重复报。</p></div>
+      <div class="ex-row"><b>豆包工作「到期再续 30 天」</b><span class="badge badge-grey">旧活动</span><p>复述的是 2026-09-24 第二轮活动：已领用户在权益到期期间获得下一轮 30 天、合计 60 天，并非 11 月新活动；与 10-30 已报的豆包签到活动不是同一条。</p></div>
+      <div class="ex-row"><b>百度库库 AI 每日 100 积分</b><span class="badge badge-amber">工具类签到</span><p>雷达最后核实于 2026-10-20，属工具类每日签到，不是近 1–2 天的大厂模型发放。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>雷达源健康度</h2><p>本轮按你的要求又找了一批新羊毛库：借鉴点写在每条里 —— 先看新鲜度，再看内容。</p></div>
+    <div class="sources">
+      <div class="src"><h3><a href="https://baipiaoji.com/" target="_blank" rel="noopener">白嫖计（新）</a></h3><p>收录约 700 个 AI 工具，其中 131 条开发者 API 免费额度带官方出处与核实日期，并开放免鉴权 JSON；还有额度变更 webhook 监控。本监控借鉴它三点：目录收录 ≠ 额度核实分开标注、商用 / 水印单列、变更监控思路。</p><span class="fresh ok">● 借鉴：核实分级 + 商用判定 + 变更监控</span></div>
+      <div class="src"><h3><a href="https://lanmao.ai/zh/o/" target="_blank" rel="noopener">懒猫 AI（新）</a></h3><p>252 个免费额度入口按场景分类（生图、生视频、编程…），适合按「我要干什么」而不是「哪家厂商」找方案。本页的生图 / 生视频专栏分法学的就是它。</p><span class="fresh">● 借鉴：按场景分栏</span></div>
+      <div class="src"><h3><a href="https://github.com/mvalentsev/awesome-free-ai-coding/blob/HEAD/providers/agnes-ai.md" target="_blank" rel="noopener">awesome-free-ai-coding（新）</a></h3><p>逐家记录免费档的「实测探针日期」：如 Agnes 页标注 2026-10-22 实测在活、并区分官方宣称限速（30 RPM）与实测有效限速（10 RPM）。本监控借鉴它给每条标核查方式。</p><span class="fresh ok">● 借鉴：宣称限速 vs 实测限速分开记</span></div>
+      <div class="src"><h3><a href="https://flatkey.ai/blog/free-llm-apis-2026" target="_blank" rel="noopener">Free LLM APIs 对比 · flatkey（新）</a></h3><p>2026-10-21 逐家对官方文档核查的免费 API 对比：Groq、OpenRouter、Cloudflare、Gemini、NVIDIA 的限额数字与「坑」都给出来源。本页海外档的限额口径主要与它交叉核对。</p><span class="fresh ok">● 借鉴：限额必须落到官方文档日期</span></div>
+      <div class="src"><h3><a href="https://github.com/ghassan-gaidi/free-llm-api-list/blob/HEAD/README.md" target="_blank" rel="noopener">free-llm-api-list（新）</a></h3><p>主打「免绑卡」诚实清单：真免费与「要绑卡才免费」分开放，还标注 KYC 与数据训练口径。本页海外档的绑卡提示学的就是它。</p><span class="fresh">● 借鉴：绑卡风险单独标</span></div>
+      <div class="src"><h3><a href="https://github.com/chenmisss/free-token-radar" target="_blank" rel="noopener">free-token-radar</a></h3><p>每周自动扫 28 个来源，数字须在官方原文找得到才入册；抓不到正文会标待人工复核。在线版 tokens.sjms.ai。</p><span class="fresh ok">● 相对最新：在册 20 条 · 更新 2026-11-02 09:30</span></div>
+      <div class="src"><h3><a href="https://github.com/precis1onz/tokenation" target="_blank" rel="noopener">Tokenation</a></h3><p>分「常态免费」与「限时羊毛」两张表，逐条对官方页核实，过期限时条目移除。本监控的“先分流”学的是它。</p><span class="fresh ok">● 用法：限时优先分流</span></div>
+      <div class="src"><h3><a href="https://github.com/hope0719/token-fbi" target="_blank" rel="noopener">token-fbi</a></h3><p>有效期内免费 Token 汇总成一页，限时活动带截止日期角标。本监控的“卡片完整度 + 到期角标”学的是它。</p><span class="fresh warn">● 注意：data.json 最后更新 / 核实均为 2026-10-20，已偏旧</span></div>
+      <div class="src"><h3><a href="https://github.com/hb250625-dotcom/free-token-hunter" target="_blank" rel="noopener">Free Token Hunter</a></h3><p>零依赖 CLI，汇总 41 个渠道，生成领取路线、记录进度、临近到期提醒。本监控的“到期追踪”学的是它。</p><span class="fresh">● 用法：季度 discover + 到期提醒，偏手动盘点</span></div>
+      <div class="src"><h3><a href="https://github.com/MuZiCul/ai-free-tokens" target="_blank" rel="noopener">ai-free-tokens</a></h3><p>号称每日中午更新的精选汇总，适合当作补充线索池。</p><span class="fresh warn">● 注意：README 最新报告停在 2026-09-12，不可只信其“日更”</span></div>
+      <div class="src"><h3><a href="https://yangmao.ai/zh/alerts/" target="_blank" rel="noopener">羊毛追踪器</a></h3><p>自称实时追踪 704 个 AI 免费额度与优惠、自动更新、到期提醒，可作订阅提醒入口先行观察。</p><span class="fresh">● 用法：提醒入口，领取前仍回官方页核对</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>这套监控怎么跑</h2><p>国内线 + 海外线双轨，2026-11-03 扩容后的方法，检查时间点不变。</p></div>
+    <div class="method">
+      <div class="step"><div class="n">01</div><h3>双线分流</h3><p>学 Tokenation 并扩容：国内线追一次性发放，海外线专盯常驻免费档的政策变化（降额、绑卡、下线）；先限时、后常态，生图生视频单独成栏（学懒猫的场景分类）。</p></div>
+      <div class="step"><div class="n">02</div><h3>机器对账</h3><p>学 free-token-radar + flatkey：每个数字必须能在官方原文或官方文档里找到才算核实，并记下核查日期；聚合页收录更新 ≠ 规则变化，不报。</p></div>
+      <div class="step"><div class="n">03</div><h3>核实分级 + 绑卡一票否决</h3><p>学白嫖计：「目录收录」与「额度已核实」分开标注，商用许可、水印单列成字段。绑卡单独设闸：要绑卡、验证支付方式或先充值 / 先有付费余额才能用的，直接不纳入主列表（本轮已剔除 Cerebras、Pollinations），只在「已排除」留记录说明原因。</p></div>
+      <div class="step"><div class="n">04</div><h3>实测口径</h3><p>学 awesome-free-ai-coding：官方宣称限速与实测有效限速分开记（如 Agnes 宣称 30 RPM、实测约 10 RPM），评分里的实用性按实测口径扣分。</p></div>
+      <div class="step"><div class="n">05</div><h3>全量到期监控</h3><p>学 Free Token Hunter + 白嫖计变更监控：固定截止跑倒计时，每日 / 每月型跑重置倒计时，无截止日的常驻档每周复核政策页，降额、加绑卡、退役都算「变化」要报。</p></div>
+      <div class="step"><div class="n">06</div><h3>两层评分：卡片总分 + 逐模型分</h3><p>卡片右上角给整个羊毛一个总分：易薅程度 45% + 实用性 55%（实用性取最值得用模型的实用分），不含智力与额度，先帮你筛掉难领又不好用的。点开「免费模型明细」再看每个具体模型自己的智力 40% + 额度 30% + 实用性 30%；评分榜也按具体模型排，不按平台排。</p></div>
+    </div>
+    </section>
+
+  <section>
+    <div class="note">
+      <h3>和 Magpie 怎么衔接？</h3>
+      <p>Magpie 是消费层：把你已领到的 Key、订阅和免费额度集中托管、协议互转、耗尽自动换号 —— 但它不会告诉你哪家刚发了新额度。这一页是它前面的发现层：<strong style="color:var(--ink)">在这里发现并核实 → 回官方页手动领取 → 把 Key 交给 Magpie 统一调度</strong>。海外档大多是 OpenAI 兼容端点（Cloudflare、Agnes、Groq、OpenRouter 都可直接填 Base URL + Key），和国内档放进同一个 Magpie 池子里轮换正合适。提醒一句：批量发放基本都要登录、实名、手动点领取，任何让你交出厂商账号密码或主 API Key 去“自动薅”的工具都不要用。</p>
+    </div>
+  </section>
+
+  <footer>
+    数据口径：本页为 2026-11-03 核查的快照。国内活动以厂商官方页当时显示为准；海外免费档为 2026-10 月下旬公开文档与多家聚合库交叉核对的口径，这类免费层变动极快（限额、绑卡要求、模型阵容都可能周级变化），领取与接入前请再看一眼官方页。纳入标准：需绑卡 / 验证支付方式 / 预充值的已剔除（见「争议与已排除」）。卡片内的直达按钮为 2026-11-03 核对过的官方入口；没有公开领取页的客户端类活动只写步骤、不放链接。卡片右上角总分公式：易薅程度（0–5）×20×45% ＋ 实用性（取最值得用模型的实用分 0–5）×20×55%，满分 100，不含智力与额度；点开明细里的逐模型分仍为智力 40% + 额度 30% + 实用性 30% 的编辑评分、不是基准跑分。模型名单以点开时官方目录为准，聚合型平台（如 OpenRouter、NVIDIA Build）的免费阵容会轮换。倒计时按你设备上的当前时间实时计算。
+  </footer>
+</div>
+<div class="toast" id="toast">已复制</div>
+
+<script>
+var ACTIVITIES = [
+  {id:"spark", region:"国内", vendor:"讯飞", title:"星辰 Spark-X2.6 免费额度（优先领）", quota:"10 亿 Tokens", type:"limited", typeLabel:"限时 · 一次性", cats:["limited"], mod:"文本", deadline:null, deadlineLabel:"自领取起 31 天内有效", expiry:"滚动到期：领取日起 31 天，到期清零", reset:null, rank:1000, s:[3,5,4],
+   desc:"此前清单里额度最大、最建议优先领的一项：注册 + 实名后在星辰 MaaS 平台领取，每人限领一次，到期清零。",
+   steps:["注册讯飞星辰 MaaS 并完成实名","在平台领取 Spark-X2.6 的 10 亿 Token","领取弹窗里先取消「额度用尽自动切换按量计费」的默认勾选"], limits:"只对 spark-x2.6 一个模型生效，调其他模型会扣费；领取起 31 天有效"},
+  {id:"qiniu", region:"国内", vendor:"七牛云", title:"Conatus 每日免费额度", quota:"每日 1 亿 Tokens", type:"daily", typeLabel:"每日型", cats:["daily"], mod:"文本", deadline:"2026-11-30T23:59:00+08:00", deadlineLabel:"活动至 2026-11-30 23:59", expiry:"活动固定截止 2026-11-30；额度每日重置", reset:"daily", rank:900, s:[3,5,4],
+   desc:"实名后每天可免费调 qiniu/conatus-free，额度每天 00:00 重置、当天不用作废。用完直接拒绝调用，不扣余额、不自动切付费模型，这一点相对省心。",
+   steps:["完成七牛云实名认证","调用模型 qiniu/conatus-free","每天 00:00 后额度自动重置，无需手动领"], limits:"充值超 100 元可把日上限提到 10 亿，但没必要专门为此充值"},
+  {id:"qodercn", region:"国内", vendor:"阿里", title:"Qoder CN 每日 Credits", quota:"每日 100 Credits", type:"daily", typeLabel:"每日型", cats:["daily","client"], mod:"文本", deadline:null, deadlineLabel:"每天 10:00 起 · 窗口至次日 10:00", expiry:"每日 10:00 开新窗口；每笔 Credits 30 天有效", reset:"daily", rank:150, s:[3,2,3],
+   desc:"每天 10:00 起在桌面端手动领 100 通用 Credits，错过不补，每笔 30 天有效。和 Qwen3.8-Flash 的 0.0× 免费是两回事：Flash 不耗 Credits。",
+   steps:["每天 10:00 后打开 Qoder CN 桌面端","手动领取当日 100 Credits","优先用快过期的 Credits（每笔 30 天）"], limits:"错过当日窗口不补领"},
+  {id:"doubao-signin", region:"国内", vendor:"字节 / 火山", title:"豆包电脑版每日签到", quota:"每日 200 额度", type:"daily", typeLabel:"每日签到", cats:["daily","client"], mod:"文本", deadline:null, deadlineLabel:"2026-10-30 起 · 累计 30 天共 8800", expiry:"每日签到制，无固定结束日，政策变动即预警", reset:"daily", rank:120, s:[2,3,3],
+   desc:"电脑版客户端签到：每天 200 额度、周一翻倍，累计签到 30 天共 8800 额度；任务奖励要手动点领取才到账，手机端没有入口。新用户电脑版首次登录另可领 30 天免费体验套餐。",
+   steps:["在电脑版豆包客户端签到（手机端无入口）","任务奖励记得手动点领取","新用户首次登录电脑版时留意 30 天体验套餐"], limits:"体验套餐以订阅页显示为准"},
+  {id:"autoclaw-migrate", region:"国内", vendor:"智谱", title:"AutoClaw 2.2.0 升级迁移礼", quota:"5000 积分 ≈ 50M Tokens", type:"limited", typeLabel:"限时 · 客户端", cats:["limited","client"], mod:"文本", deadline:null, deadlineLabel:"官方未写截止日 · 发放起 7 天有效", expiry:"滚动到期：发放起 7 天即清零，领了立刻用", reset:null, rank:45, s:[3,3,3],
+   desc:"升级到 AutoClaw 2.2.0 并完成旧版数据迁移可领 5000 积分，自发放起只有 7 天、到期清零，领到别攒着。新旧版可共存、不删旧数据；密钥与登录授权不会自动迁移，需在新版重新授权。",
+   steps:["从官网下载 AutoClaw 2.2.0","在新版右上角点「迁移数据」，选要带走的智能体 / 会话 / 身份资料","迁移时保持客户端运行、不要重复发起，完成后在「设置 → 关于」开自动更新"], limits:"官方未明确无旧版数据的新用户是否同样发放，以客户端实际显示为准"},
+  {id:"autoclaw", region:"国内", vendor:"智谱", title:"AutoClaw 登录领免费额度", quota:"50M Tokens", type:"limited", typeLabel:"限时活动", cats:["limited","client"], mod:"文本", deadline:"2026-11-08T23:59:00+08:00", deadlineLabel:"2026-11-08 23:59", expiry:"活动固定截止 2026-11-08 23:59", reset:null, rank:50, s:[3,3,4],
+   desc:"11 月 2 日至 8 日登录领取。英文聚合榜写作 40M，与中文官方 50M 为同一活动口径差异，以中文官方为准。",
+   steps:["在活动期内打开 AutoClaw 并登录","按客户端内活动卡片提示领取","领取后在 Magpie 中添加对应 Key / 账号调度"], limits:"活动期外不可领；具体模型范围以客户端卡片为准"},
+  {id:"minimax", region:"国内", vendor:"MiniMax", title:"M2 / M3 免费试用", quota:"限时免费", type:"limited", typeLabel:"限时活动", cats:["limited"], mod:"文本", deadline:"2026-11-07T08:00:00+08:00", deadlineLabel:"2026-11-07 约 08:00", expiry:"固定截止 2026-11-07 约 08:00，本页最近的一项", reset:null, rank:40, s:[4,2,4],
+   desc:"免费试用即将结束，是当前倒计时最近的一项。还没到 48 小时临期线，重度使用者建议在 11-05 前后决定是否集中用完。",
+   steps:["登录 MiniMax 开放平台 / 客户端","确认 M2 / M3 试用权益仍在有效期内","优先把高价值任务排在截止前"], limits:"截止时间以官方页面显示为准"},
+  {id:"zcode", region:"国内", vendor:"智谱", title:"ZCode 每日免费额度", quota:"每日 3 亿 Tokens*", type:"daily", typeLabel:"每日型", cats:["daily","client"], mod:"文本", deadline:null, deadlineLabel:"2026-10-27 起常规轮次", expiry:"每日发放制，无固定结束日，轮次变化即预警", reset:"daily", rank:300, s:[4,5,4],
+   desc:"10 月 27 日起的常规轮次，属于持续发放型而非一次性新活动。雷达与聚合站重复收录不等于规则变化。",
+   steps:["打开 ZCode 客户端并登录","查看当日额度是否到账","当日额度优先用于代码类任务"], limits:"* 额度口径与分配方式以 ZCode 官方当时说明为准"},
+  {id:"tokenhub", region:"国内", vendor:"腾讯", title:"TokenHub 新人包", quota:"每模型 100 万 Tokens", type:"evergreen", typeLabel:"常态免费", cats:["evergreen"], mod:"文本", deadline:"2026-12-31T23:59:00+08:00", deadlineLabel:"本期至 2026-12-31", expiry:"本期固定截止 2026-12-31", reset:null, rank:100, s:[3,2,3],
+   desc:"每个主账号可领一次，语言模型给 100 万 Token 体验额度。本轮无新规则变化，不重复推送。",
+   steps:["登录腾讯云 TokenHub","按官方页指引领取新人包","把 Key 接入 Magpie 统一调度"], limits:"有效期有 1 年与 90 天两种页面口径，以你领取时显示为准"},
+  {id:"volcano", region:"国内", vendor:"字节 / 火山", title:"火山方舟协作奖励计划（需加入）", quota:"每日最高 200 万 Tokens", type:"evergreen", typeLabel:"常态免费", cats:["evergreen","daily"], mod:"文本", deadline:null, deadlineLabel:"长期 · 适用范围待官方确认", expiry:"长期监测：计划规则与适用范围变化即预警", reset:"daily", rank:200, s:[3,3,3],
+   desc:"别被「每天 200 万」误导：官方口径是新用户每模型一次性 50 万；协作奖励计划的「每日最高 200 万」需要主动加入，且适用范围待官方页面确认。",
+   steps:["登录火山方舟，先领新用户每模型一次性 50 万","如需更高额度，再主动加入协作奖励计划","创建 Key 后接入 Magpie"], limits:"新用户口径为每模型一次性 50 万；200 万为加入协作计划后的每日最高值，范围待确认"},
+  {id:"bailian", region:"国内", vendor:"阿里", title:"百炼 每模型免费额度", quota:"每模型 100 万 Tokens", type:"evergreen", typeLabel:"常态免费", cats:["evergreen"], mod:"文本", deadline:null, deadlineLabel:"长期免费档", expiry:"长期监测：各模型免费额度用完为止，政策变动即预警", reset:null, rank:100, s:[4,3,4],
+   desc:"阿里云百炼的常驻免费档：每个模型分别有免费额度，适合逐个模型试用与评测，而非一次性大额发放。",
+   steps:["登录阿里云百炼控制台","在模型列表查看各模型剩余额度","按模型逐个开通并取 Key"], limits:"各模型额度独立计算，以百炼控制台显示为准"},
+  {id:"qoder", region:"国内", vendor:"阿里", title:"Qoder · Qwen3.8-Flash 免费", quota:"限时免费（已延期）", type:"evergreen", typeLabel:"常态 / 延期中", cats:["evergreen","client"], mod:"文本", deadline:null, deadlineLabel:"2026-09-18 起 · 结束另行公告", expiry:"结束日未定：等官方结束公告，列入长期监测", reset:null, rank:30, s:[3,2,3],
+   desc:"9 月的老活动，官方已延期、结束时间另行公告。本轮无新规则变化，列入追踪但不按新活动推送。",
+   steps:["打开 Qoder 客户端","确认 Qwen3.8-Flash 免费权益仍可用","留意官方后续结束公告"], limits:"结束时间未定，以官方公告为准"},
+  {id:"doubao", region:"国内", vendor:"字节 / 火山", title:"豆包工作权益续期（第二轮）", quota:"再续 30 天 · 合计 60 天", type:"limited", typeLabel:"限时活动", cats:["limited","client"], mod:"文本", deadline:null, deadlineLabel:"2026-09-24 第二轮", expiry:"跟随个人权益到期日：到期期间自动续下一轮", reset:null, rank:25, s:[2,2,2],
+   desc:"已领过第一轮的用户，在权益到期期间会获得下一轮 30 天。不是 11 月新活动，也与 10-30 已报的豆包签到活动不是同一条。",
+   steps:["打开豆包 PC 端 / 工作入口","查看已有权益的到期时间","到期期间留意续期权益是否自动到账"], limits:"仅限已领过前一轮的用户，以客户端显示为准"},
+  {id:"hy3", region:"国内", vendor:"腾讯", title:"混元 Hy3 每日赠送（倍率 0.00）", quota:"每日赠送 · 待核实", type:"disputed", typeLabel:"争议待核实", cats:["daily","client"], mod:"文本", deadline:null, deadlineLabel:"口径冲突：11-15 vs 已于 10-31 结束", expiry:"口径冲突中：以你客户端卡片小字为准，不按任一日期排预算", reset:"daily", rank:10, s:[3,3,2],
+   desc:"客户端卡片与官方公告、雷达站三种口径互相冲突，未核实。不要按任何一个日期写进长期预算。",
+   steps:["打开 WorkBuddy 客户端","找到 Hy3 卡片，亲眼确认卡片小字写的截止日期","以你客户端当时显示为准使用"], limits:"官方未发对应延期公告；本页不作确认"},
+  {id:"cf", region:"海外", vendor:"Cloudflare", title:"Workers AI 每日免费 Neurons（文本 + 生图 + 语音）", quota:"每日 10,000 Neurons", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen","daily"], mod:"多模态 · 生图", deadline:null, deadlineLabel:"长期免费档 · 每日重置", expiry:"每日 00:00 UTC 重置；长期监测模型目录与计价变化", reset:"daily", rank:850, s:[3,4,5],
+   desc:"海外常驻档里最全能的一个：文本、生图（FLUX.1 schnell）、语音、向量共用每日 10,000 Neurons 池，00:00 UTC 重置。第三方实测约合 490 条 Llama 3.1 8B 短回复或 57–173 张 FLUX 图（随尺寸步数浮动）；超额直接报错、不产生账单。",
+   steps:["注册 Cloudflare 并开通 Workers AI","在控制台创建 API Token，记下 Account ID","用 OpenAI 兼容端点把 Key 接入 Magpie","在控制台盯 Neurons 日用量，生图任务先算成本"], limits:"前沿大模型（如部分 Kimi / GLM / DeepSeek 新款）需 Workers Paid 计划，不在免费池；无需绑卡的口径以官方页为准"},
+  {id:"agnes", region:"海外", vendor:"Agnes AI", title:"Agnes Flash 全模态免费（文本 / 生图 / 生视频）", quota:"Flash 模型 $0 · 限流", type:"evergreen", typeLabel:"促销免费 · 无公布截止日", cats:["evergreen"], mod:"多模态 · 生图 · 生视频", deadline:null, deadlineLabel:"促销价 · 结束日以官方公告为准", expiry:"重点监控：$0 为促销定价，官方明说结束日以平台公告与账户账单为准", reset:null, rank:800, s:[3,4,5],
+   desc:"新加坡 Sapiens AI 的自有模型：agnes-3.0-flash / 2.5-flash 文本、agnes-image-2.1-flash 生图、agnes-video-2.5-flash 生视频（5 秒）同一个 Key 全部 $0，OpenAI 兼容。2026-09 免费限速已下调过一次（官方宣称 30 RPM、聚合库实测有效约 10 RPM，视频约 1–2 RPM）—— 促销随时可能再变，所以列为重点监控。",
+   steps:["打开 Agnes 官方控制台 platform.agnes-ai.com 注册并创建 API Key（免绑卡）","接入时把 API 接入地址 https://apihub.agnes-ai.com/v1 填进 Magpie 的 Base URL（这是配置用的地址，不是网页，别当领取页打开）","文本用 agnes-2.5-flash / 3.0-flash，生图用 agnes-image-2.1-flash，生视频用 agnes-video-2.5-flash","Pro 系列是收费模型，模型列表里别误选"], limits:"限流按账号共享（非按 Key）；无公布的每日总量上限，以 429 为准；促销结束日未公布"},
+  {id:"google", region:"海外", vendor:"Google", title:"AI Studio · Gemini API 免费层", quota:"按模型限流 · 免绑卡", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen"], mod:"文本（多模态输入）", deadline:null, deadlineLabel:"长期免费层 · 限额按项目显示", expiry:"长期监测：限额按模型调整，AI Studio 速率页为准", reset:"daily", rank:700, s:[5,3,4],
+   desc:"免费层智力天花板最高的一档：Gemini Flash / Flash-Lite 系列与部分 Pro 档在免费层内限流可用，1M 级上下文、多模态输入。具体 RPM / RPD 不公开固定数字，按项目在 AI Studio 里显示。注意生图（Nano Banana 等）不在 API 免费层内，别按免费预期它。",
+   steps:["用 Google 账号打开 AI Studio 并创建 API Key","在 AI Studio 的速率限制页确认你项目的实际限额","把 Key 接入 Magpie，优先跑长文档与多模态任务"], limits:"免费层内容会被 Google 用于改进产品（EEA / 英国 / 瑞士口径不同）；最新预览模型通常不在免费层"},
+  {id:"groq", region:"海外", vendor:"Groq", title:"Groq 免费层（极速推理）", quota:"每模型 1,000 次/日 起", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen","daily"], mod:"文本 · 语音", deadline:null, deadlineLabel:"长期免费层 · 每日限额", expiry:"每日限额重置；长期监测模型阵容（下架过模型）", reset:"daily", rank:650, s:[4,2,5],
+   desc:"以速度见长的免费层：gpt-oss-120b 口径为 30 RPM、1,000 次/日、200K Tokens/日（按模型分别计算），另有 Qwen 系与 Whisper 语音。适合高频短任务与实时交互，攒大活儿不如 CF 耐用。",
+   steps:["注册 Groq Cloud 并创建 API Key（免绑卡）","按模型查控制台的 Rate Limits 页确认当日限额","接入 Magpie，把延迟敏感任务路由给 Groq"], limits:"限额按组织（非按 Key）计算；模型阵容调整频繁，以控制台为准"},
+  {id:"openrouter", region:"海外", vendor:"OpenRouter", title:"OpenRouter :free 模型池", quota:"50 次/日（充 $10 后 1,000/日）", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen","daily"], mod:"文本", deadline:null, deadlineLabel:"长期 · :free 阵容轮换", expiry:"每日限额重置；:free 阵容轮换频繁，模型下架即预警", reset:"daily", rank:600, s:[4,2,4],
+   desc:"一个 Key 试遍 25+ 个 :free 后缀模型（阵容轮换）：20 RPM、50 次/日；历史上累计买过 $10 额度后日上限升到 1,000 次。注意失败的请求也计入当日次数，别拿它做无谓重试。",
+   steps:["注册 OpenRouter 并创建 API Key","在模型列表里筛选 :free 后缀模型","接入 Magpie 做多模型试用与备用通道"], limits:"免费阵容轮换、单模型随时下架；失败请求也计数；免费档无 prompt 缓存等管理功能"},
+  {id:"nvidia", region:"海外", vendor:"NVIDIA", title:"Build · NIM 免费推理端点", quota:"约 40 RPM · 无公布日上限", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen"], mod:"文本", deadline:null, deadlineLabel:"长期 · 仅限开发测试", expiry:"长期监测：免费端点阵容与速率未公布固定值，变化即预警", reset:null, rank:550, s:[4,3,3],
+   desc:"build.nvidia.com 上 100+ 开源模型的免费托管端点（DeepSeek、Llama、Nemotron、Kimi 等），约 40 RPM、无公布的每日上限，适合试大模型与做评测。定位是开发 / 测试 / 研究，生产使用需要 NVIDIA AI Enterprise 授权。",
+   steps:["注册并验证 NVIDIA 账号","在 Build 目录里选模型并生成 API Key","接入 Magpie 做大模型试用通道"], limits:"仅限开发测试用途；免费层速率与阵容未公布固定口径，以调用返回为准"},
+  {id:"hf", region:"海外", vendor:"Hugging Face", title:"HF 免费推理（小任务模型 + ZeroGPU）", quota:"小任务免费 · ZeroGPU 每月 5 分钟", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen"], mod:"文本（小任务）", deadline:null, deadlineLabel:"长期 · Free 计划口径", expiry:"长期监测：Free 计划口径变化即预警（你的账号 littlepawn 即 Free 计划）", reset:"monthly", rank:250, s:[2,2,3],
+   desc:"结合你账号的实测结论收录：HF Inference 适合嵌入、分类、排序这类 CPU 小任务模型；ZeroGPU 免费口径为每月 5 分钟、最多 5 个并发副本。聊天大模型经 Inference Providers 是按量付费的，不在免费内 —— 这条最容易被免费清单误导，单独标清。",
+   steps:["登录 Hugging Face，在 Settings / Access Tokens 建只读 / 推理用 Token","小任务走 HF Inference，短时 GPU Demo 走 Spaces / ZeroGPU","聊天大模型如需用，走 Providers 按量付费、心里有数"], limits:"Free 计划无每月 Providers 额度；PRO（$9/月）才含 $2 推理额度"},
+  {id:"jimeng", region:"国内", vendor:"字节 / 即梦", title:"即梦 AI 每日积分（生图 + 生视频）", quota:"每日约 60 积分", type:"daily", typeLabel:"每日型", cats:["daily"], mod:"生图 · 生视频", deadline:null, deadlineLabel:"每日发放 · 当日清零", expiry:"每日重置且不过夜：当天不用即作废", reset:"daily", rank:350, s:[4,3,4],
+   desc:"字节的图 / 视频创作平台：免费积分按自然日发放（多口径 60–90，以登录后显示为准），可出若干张图或几条基础视频，中文提示词理解与剪映协同是强项。积分不过夜、不累积，适合每天顺手出草稿。",
+   steps:["登录即梦 AI，确认当日积分到账","先出图定稿，再用图生视频，别反着来浪费积分","导出前看清免费档的水印与使用权限说明"], limits:"当日清零；免费导出的水印与商用权限以会员页当时说明为准"},
+  {id:"keling", region:"国内", vendor:"快手", title:"可灵 AI 每日灵感值（生图 + 生视频）", quota:"每日 66 灵感值", type:"daily", typeLabel:"每日型", cats:["daily"], mod:"生图 · 生视频", deadline:null, deadlineLabel:"每日登录赠 · 当日不结转", expiry:"每日重置；会员页口径变化说法待复核", reset:"daily", rank:380, s:[5,3,4],
+   desc:"视频质量第一梯队：非会员每日登录赠 66 灵感值，约够 6 条标准模式 5 秒视频（白嫖计 2026-08 核实口径）。真正的门槛不是额度而是授权：免费档产出不可商用、使用须标注 AI 生成。另有第三方称会员页已不再列每日免费积分，标待复核。",
+   steps:["每日登录可灵领取灵感值","标准模式出片，别用高性能模式烧额度","商用需求直接看付费档授权，别指望免费档"], limits:"免费产出不可商用且须显著标注由 Kling AI 生成（据白嫖计核实）；当日不结转"},
+  {id:"hailuo", region:"国内", vendor:"MiniMax", title:"海螺 AI 欢迎积分 + 试用积分（生视频）", quota:"欢迎包一次性 · 3 天到期", type:"limited", typeLabel:"限时 · 一次性", cats:["limited"], mod:"生视频 · 生图", deadline:null, deadlineLabel:"欢迎包授予后 3 天到期", expiry:"最易亏的一项：欢迎积分授予后 3 天作废；每日试用积分随活动变动", reset:null, rank:200, s:[4,2,3],
+   desc:"海螺的免费结构和别人不一样：没有常驻公示的每日额度，新用户欢迎积分包是主力，但授予后仅 3 天有效；新模型上线期可能另有每日试用积分，数额随活动变动、官方不写死。图生视频是它的强项。",
+   steps:["注册后先确认欢迎积分的到期时间再动手","把最想做的图生视频排在 3 天窗口内","免费下载带水印，正式素材先想清用途"], limits:"欢迎包每人限一份、3 天作废；免费用户并行任务受限；API 层无免费额度（仅网页 / App）"},
+  {id:"leonardo", region:"海外", vendor:"Leonardo", title:"Leonardo 每日免费 Tokens（生图）", quota:"每日 150 Tokens", type:"daily", typeLabel:"每日型", cats:["daily"], mod:"生图", deadline:null, deadlineLabel:"每日重置", expiry:"每日重置；长期监测免费档规则", reset:"daily", rank:330, s:[4,3,4],
+   desc:"海外生图老牌：免费档每日 150 Fast Tokens（约 30–50 张，视设置而定），强在游戏美术、动漫、风格化插画与画布编辑、社区模型。免费档作品默认公开，隐私素材慎用。",
+   steps:["注册 Leonardo 后每日登录使用当日 Tokens","先用默认设置出图，满意再升分辨率烧 Tokens","需要私密创作的素材改用本地或付费档"], limits:"免费档作品公开可见；商用口径以平台条款为准"},
+  {id:"firefly", region:"海外", vendor:"Adobe", title:"Firefly 每月生成积分（生图）", quota:"每月 25 积分", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen"], mod:"生图", deadline:null, deadlineLabel:"每月重置", expiry:"每月重置；量最小，适合正式场合少量出图", reset:"monthly", rank:180, s:[3,2,4],
+   desc:"量最小但最「正规」：每月 25 个生成积分，模型用授权素材训练，商用相对安心，和 Photoshop / Express 生态打通。适合一个月几次的正式配图，不适合练手刷量。",
+   steps:["用 Adobe 账号打开 Firefly","每月 25 积分留给最终版出图，草稿用别家","导出时保留内容凭证（Content Credentials）信息"], limits:"积分每月重置不累积；功能范围以 Adobe 账号地区与页面为准"},
+  {id:"hfspaces", region:"海外", vendor:"Hugging Face", title:"HF Spaces 免费生图 / 生视频（排队制）", quota:"排队免费 · 无固定张数", type:"evergreen", typeLabel:"本身就免费", cats:["evergreen"], mod:"生图 · 生视频", deadline:null, deadlineLabel:"长期 · 排队制", expiry:"长期监测：热门 Space 随时限流或下线", reset:null, rank:280, s:[3,3,3],
+   desc:"研究者托管的免费 Demo 集合：FLUX、Wan、HunyuanVideo 等新模型往往第一时间有 Space 可玩，不要钱、靠排队。高峰期限流和排队时长不可控，当试玩与尝鲜通道用，别当稳定产能。",
+   steps:["在 HF Spaces 里按模型名搜最新 Demo","避开高峰时段排队，生成结果及时下载","看清每个 Space 标注的模型许可证再商用"], limits:"无 SLA；Space 由作者维护，随时可能下线或限流"}
+];
+
+var URLS = {
+  spark:"https://maas.xfyun.cn/",
+  bailian:"https://bailian.console.aliyun.com/cn-beijing/?tab=app",
+  volcano:"https://console.volcengine.com/ark/region:cn-beijing/overview",
+  cf:"https://developers.cloudflare.com/workers-ai/",
+  agnes:"https://platform.agnes-ai.com/",
+  google:"https://aistudio.google.com/welcome",
+  groq:"https://console.groq.com",
+  openrouter:"https://openrouter.ai/collections/free-models/",
+  nvidia:"https://build.nvidia.com",
+  hf:"https://huggingface.co/docs/hub/spaces-overview",
+  leonardo:"https://app.leonardo.ai/",
+  hfspaces:"https://huggingface.co/spaces"
+};
+var URL_LABEL = {agnes:"前往官方控制台注册 / 领取 Key", hf:"打开官方说明 · Spaces 总览"};
+var BTN_LABEL = {hf:"看说明 ↗"};
+var API_NOTE = {agnes:"API 接入地址（配置用，不是网页）：https://apihub.agnes-ai.com/v1 —— 拿到 Key 后把这个地址填进 Magpie / 代码的 Base URL，不要当领取页打开。"};
+var MODELS = {
+  spark:[{n:"Spark-X2.6（模型名 spark-x2.6）", s:[3,5,4], d:"10 亿额度只对这一个模型名生效；同 Key 调其他模型按量扣费，配置时别写错名。"}],
+  qiniu:[{n:"qiniu/conatus-free", s:[3,5,4], d:"每日 1 亿、00:00 重置；用完直接拒绝调用，不扣余额、不自动切付费模型。"}],
+  qodercn:[{n:"Qoder CN 客户端内模型池（通用 Credits 消耗）", s:[3,2,3], d:"每日领的 100 Credits 在客户端内按所选模型消耗，不同模型费率不同，以客户端显示为准；Qwen3.8-Flash 走另一条 0.0× 免费、不耗 Credits（见 Qoder 条目）。"}],
+  "doubao-signin":[{n:"豆包电脑版客户端内模型（签到额度通用）", s:[2,3,3], d:"签到额度在电脑版客户端内消耗，可选模型以客户端当时列表为准；手机端无入口。"}],
+  "autoclaw-migrate":[{n:"AutoClaw 客户端内模型（迁移礼 5000 积分通用）", s:[3,3,3], d:"积分在客户端内按模型消耗，发放起 7 天清零，先用最贵的模型别攒着。"}],
+  autoclaw:[{n:"AutoClaw 客户端内模型（登录礼 50M 通用）", s:[3,3,4], d:"活动期内领取，模型范围以客户端活动卡片为准。"}],
+  minimax:[{n:"MiniMax-M3", s:[4,2,4], d:"与 M2 共用限时试用权益，2026-11-07 约 08:00 截止。"},{n:"MiniMax-M2", s:[4,2,4], d:"同上；高价值任务优先排在截止前。"}],
+  zcode:[{n:"ZCode 客户端内模型（每日额度通用）", s:[4,5,4], d:"每日 3 亿为雷达口径（*），具体可选模型与分配以客户端当时显示为准，优先跑代码任务。"}],
+  tokenhub:[{n:"TokenHub 平台内各语言模型（逐个领）", s:[3,2,3], d:"新人包按模型发放：每个模型一份 100 万 Token 体验额度，主账号限领一次，逐个在官方页领。"}],
+  volcano:[{n:"Doubao-Seed 系列（新用户每模型一次性 50 万）", s:[3,3,3], d:"逐模型开通领取；这是官方新用户口径，别与协作计划的数字混淆。"},{n:"Doubao-Seed-Evolving（协作奖励计划入口模型）", s:[3,3,3], d:"据方舟官方文档，协作奖励计划当前入口支持此模型，加入后每日最高 200 万，范围以官方页为准。"}],
+  bailian:[{n:"Qwen3.8-Max", s:[4,3,4], d:"百炼旗舰档，每个模型独立一份 100 万免费额度，逐个开通。"},{n:"Qwen3.8-Flash", s:[3,3,4], d:"同为每模型独立额度，速度档。"},{n:"百炼平台内其他模型（各一份免费额度）", s:[3,3,4], d:"模型列表里逐个查看剩余额度再取 Key，别只盯热门模型。"}],
+  qoder:[{n:"Qwen3.8-Flash", s:[3,2,3], d:"0.0× 免费、不耗每日 Credits；已延期、结束日另行公告。"}],
+  doubao:[{n:"豆包工作权益内模型（续期权益通用）", s:[2,2,2], d:"仅限已领过第一轮的用户在到期期间续得 30 天，新用户领不到。"}],
+  hy3:[{n:"混元 Hy3", s:[3,3,2], d:"倍率 0.00、每日赠送的口径三种来源互相冲突，未核实：以你 WorkBuddy 客户端卡片小字为准。"}],
+  cf:[{n:"FLUX.1 schnell · 生图", s:[3,4,5], d:"与文本共用每日 10,000 Neurons 池，第三方实测约合 57–173 张/日（随尺寸 / 步数浮动）。"},{n:"Llama 3.1 8B Instruct · 文本", s:[2,4,5], d:"第三方实测约合 490 条短回复/日；胜在稳定、超额报错不产生账单。"},{n:"Whisper · 语音转写", s:[3,4,5], d:"同池消耗 Neurons，适合顺手转写短音频。"}],
+  agnes:[{n:"agnes-3.0-flash / agnes-2.5-flash · 文本", s:[3,4,5], d:"同一个 Key 免费；官方宣称与实测限速有差，按约 10 RPM 规划。"},{n:"agnes-image-2.1-flash · 生图", s:[3,4,5], d:"同 Key 免费出图。"},{n:"agnes-video-2.5-flash · 生视频（5 秒）", s:[3,4,4], d:"同 Key 免费，限流最紧（约 1–2 RPM），排队要有耐心。"}],
+  google:[{n:"Gemini Flash（免费层）", s:[5,3,4], d:"免费层智力主力，1M 级上下文、多模态输入；限额按项目在 AI Studio 显示。"},{n:"Gemini Flash-Lite（免费层）", s:[3,3,4], d:"更轻更快，适合高频小任务。"},{n:"Gemini Pro 档（免费层内部分可用）", s:[5,2,4], d:"是否在你的免费层内以 AI Studio 速率限制页为准，最新预览模型通常不在免费层。"}],
+  groq:[{n:"openai/gpt-oss-120b", s:[4,2,5], d:"30 RPM · 1,000 次/日 · 200K Tokens/日，限额按组织计。"},{n:"openai/gpt-oss-20b", s:[3,2,5], d:"同系列小档，速度更快，限额同为每模型独立计算。"},{n:"Qwen 系（Groq 托管）", s:[4,2,5], d:"具体型号与限额以控制台 Rate Limits 页为准，阵容调整频繁。"},{n:"Whisper Large v3 · 语音转写", s:[3,2,5], d:"语音档单独限额，适合转写任务。"}],
+  openrouter:[{n:"openrouter/free（免费模型路由）", s:[3,2,4], d:"不挑模型时用它：自动在当前免费模型里挑一个，省去追阵容轮换。"},{n:"NVIDIA Nemotron 3 Ultra（:free）", s:[4,2,4], d:"当前免费榜热度靠前的强模型之一；:free 阵容会轮换，下架即换。"},{n:"其他 :free 后缀模型（25+ 个，轮换）", s:[3,2,3], d:"全池共享 20 RPM、50 次/日，失败请求也计数；累计买过 $10 后日上限升到 1,000 次（那是付费解锁，不必专门去买）。"}],
+  nvidia:[{n:"meta/llama-3.3-70b-instruct", s:[4,3,3], d:"Build 目录托管端点，约 40 RPM；仅限开发测试。"},{n:"DeepSeek / Kimi / Nemotron 等目录模型（100+）", s:[4,3,3], d:"同一个 Key 试遍目录，阵容与速率无公布固定值，以调用返回为准。"}],
+  hf:[{n:"HF Inference 小任务模型（嵌入 / 分类 / 排序等）", s:[2,2,3], d:"CPU 小任务是 Free 计划的免费部分；聊天大模型走 Providers 是按量付费，不在此列。"},{n:"ZeroGPU / Spaces 托管模型", s:[2,2,3], d:"Free 口径每月 5 分钟、最多 5 个并发副本，适合短时 Demo。"}],
+  jimeng:[{n:"即梦生图模型", s:[4,3,4], d:"每日约 60 积分与视频共用一池，先出图定稿再动视频。"},{n:"即梦生视频模型", s:[4,3,4], d:"图生视频更耗积分，当日清零、不过夜。"}],
+  keling:[{n:"可灵生视频（标准模式）", s:[5,3,4], d:"每日 66 灵感值约够 6 条标准模式 5 秒视频；免费产出不可商用且须标注 AI 生成。"},{n:"可灵生图", s:[4,3,4], d:"与视频共用灵感值池，当日不结转。"}],
+  hailuo:[{n:"海螺生视频（图生视频）", s:[4,2,3], d:"强项是图生视频；欢迎积分授予后仅 3 天有效，优先排它。"},{n:"海螺生图", s:[3,2,3], d:"与视频共用积分；免费下载带水印。"}],
+  leonardo:[{n:"Leonardo Phoenix · 生图", s:[4,3,4], d:"免费档可用，每日 150 Fast Tokens；免费作品默认公开。"},{n:"FLUX Schnell / FLUX Dev（Leonardo 内）", s:[4,3,4], d:"平台内可选的 FLUX 系档位，风格化与速度取向不同，Tokens 消耗以生成按钮显示为准。"}],
+  firefly:[{n:"Adobe Firefly 生图模型", s:[3,2,4], d:"每月仅 25 积分，但训练数据为授权素材、商用相对安心，留给正式出图。"}],
+  hfspaces:[{n:"FLUX（Spaces Demo）· 生图", s:[3,3,3], d:"研究者托管的免费 Demo，排队制、无固定张数。"},{n:"Wan / HunyuanVideo（Spaces Demo）· 生视频", s:[3,3,3], d:"新模型往往第一时间能在这里试到；高峰期排队久，不当稳定产能。"}]
+};
+ACTIVITIES.forEach(function(a){ a.url = URLS[a.id] || null; a.models = MODELS[a.id] || []; });
+
+var state = {cat:"all", vendor:"all", query:"", sort:"deadline", };
+
+/* 易薅程度 EASE (0-5) — 按领取摩擦单独评，不从模型分推导：
+   5 = 注册即用/免绑卡领 Key 即用 (qiniu, google, groq, openrouter, leonardo, firefly)
+   4 = 一次实名/领取或注册+开通即用 (spark 有取消自动续费的小坑仍算 4, minimax, zcode, tokenhub, bailian, agnes, nvidia, jimeng)
+   3 = 每日手动领/签到、需装客户端、需开通/加入计划或排队 (qodercn, doubao-signin, autoclaw, volcano, qoder, cf 需开 Workers 并配 Token, hf 需建 Token 理解口径, keling, hailuo)
+   2 = 多步迁移/仅受邀续期/争议未核实/纯排队无保障 (autoclaw-migrate, doubao, hy3, hfspaces) */
+var EASE = {spark:4, qiniu:5, qodercn:3, "doubao-signin":3, "autoclaw-migrate":2, autoclaw:3, minimax:4, zcode:4, tokenhub:4, volcano:3, bailian:4, qoder:3, doubao:2, hy3:2, cf:3, agnes:4, google:5, groq:5, openrouter:5, nvidia:4, hf:3, jimeng:4, keling:3, hailuo:3, leonardo:5, firefly:5, hfspaces:2};
+
+function daysLeft(d){ if(!d) return Infinity; return (new Date(d)-new Date())/86400000; }
+function tagClass(t){ return t==="limited"?"tag-limited":t==="disputed"?"tag-disputed":t==="daily"?"tag-daily":"tag-evergreen"; }
+function overall(a){ return Math.round((a.s[0]*0.4+a.s[1]*0.3+a.s[2]*0.3)*20); }
+function mOverall(s){ return Math.round((s[0]*0.4+s[1]*0.3+s[2]*0.3)*20); }
+function bestModel(a){ if(!a.models||!a.models.length) return null; var b=a.models[0]; for(var i=1;i<a.models.length;i++){ if(mOverall(a.models[i].s)>mOverall(b.s)) b=a.models[i]; } return b; }
+function actScore(a){ var bm=bestModel(a); return bm?mOverall(bm.s):overall(a); }
+function topS(a,i){ var bm=bestModel(a); return bm?bm.s[i]:a.s[i]; }
+function easeOf(a){ return (typeof EASE[a.id]==="number") ? EASE[a.id] : 3; }
+function woolScore(a){ var bm=bestModel(a); var use = bm ? bm.s[2] : a.s[2]; return Math.round(easeOf(a)*20*0.45 + use*20*0.55); }
+function bars(a){
+  var names=["智力","额度","实用"];
+  return a.map(function(v,i){ return '<div class="srow"><span>'+names[i]+'</span><span class="bar"><i style="width:'+(v*20)+'%"></i></span><b>'+v+'</b></div>'; }).join("");
+}
+function liveSpan(a){
+  if(a.deadline) return ' · <span class="live" data-deadline="'+a.deadline+'">计算中</span>';
+  if(a.reset==="daily") return ' · 距下次重置 <span class="live" data-reset="daily">计算中</span>';
+  if(a.reset==="monthly") return ' · 距下次重置 <span class="live" data-reset="monthly">计算中</span>';
+  return '';
+}
+
+function render(){
+  var list = ACTIVITIES.filter(function(a){
+    if(state.cat==="intl" && a.region!=="海外") return false;
+    if(state.cat==="cn" && a.region!=="国内") return false;
+    if(state.cat==="media" && a.mod.indexOf("生图")===-1 && a.mod.indexOf("生视频")===-1) return false;
+    if(["limited","evergreen","daily","client"].indexOf(state.cat)>-1 && a.cats.indexOf(state.cat)===-1) return false;
+    if(state.vendor!=="all" && a.vendor!==state.vendor) return false;
+    if(state.query){ var hay=(a.vendor+a.title+a.quota+a.desc+a.mod+(a.models||[]).map(function(m){return m.n;}).join(" ")).toLowerCase(); if(hay.indexOf(state.query.toLowerCase())===-1) return false; }
+    return true;
+  });
+  list.sort(function(x,y){
+    if(state.sort==="totalScore") return woolScore(y)-woolScore(x);
+    if(state.sort==="score") return actScore(y)-actScore(x);
+    if(state.sort==="intel") return topS(y,0)-topS(x,0) || actScore(y)-actScore(x);
+    if(state.sort==="quotaScore") return topS(y,1)-topS(x,1) || actScore(y)-actScore(x);
+    if(state.sort==="useScore") return topS(y,2)-topS(x,2) || actScore(y)-actScore(x);
+    if(state.sort==="quota") return y.rank-x.rank;
+    if(state.sort==="vendor") return x.vendor.localeCompare(y.vendor,"zh");
+    return daysLeft(x.deadline)-daysLeft(y.deadline);
+  });
+  var grid=document.getElementById("grid");
+  document.getElementById("countNote").textContent = "显示 "+list.length+" / "+ACTIVITIES.length+" 条";
+  if(!list.length){ grid.innerHTML='<div class="empty">没有符合条件的活动。换个关键词或分类试试 —— 或者这正是好消息：没有需要你现在扑上去领的东西。</div>'; return; }
+  grid.innerHTML = list.map(function(a){
+    var dl = a.deadline ? Math.ceil(daysLeft(a.deadline)) : null;
+    var dlText = dl===null ? a.deadlineLabel : (dl<0 ? "已结束 · "+a.deadlineLabel : "还剩 "+dl+" 天 · 截止 "+a.deadlineLabel);
+    return '<article class="card">'
+      +'<div class="card-top"><div class="card-main"><div class="vendor">'+a.vendor+'<span class="region">'+a.region+'</span></div><h3>'+a.title+'</h3></div><div class="card-top-right"><div class="wool-score" title="易薅 '+easeOf(a)+'/5 · 实用 '+topS(a,2)+'/5 · 总分 = 易薅×20×45% + 实用×20×55%"><span class="wool-label">易薅·实用</span><span class="wool-num">'+woolScore(a)+'</span></div><span class="tag '+tagClass(a.type)+'">'+a.typeLabel+'</span></div></div>'
+      +'<div class="quota">'+a.quota+'</div>'
+      +'<div class="modline">类型：'+a.mod+'</div>'
+      +'<p class="desc">'+a.desc+'</p>'
+      +'<div class="meta"><span>⏳ <b>'+dlText+'</b>'+liveSpan(a)+'</span><span>到期监控：'+a.expiry+'</span><span>限制：'+a.limits+'</span></div>'
+      +'<details><summary>免费模型明细 · '+a.models.length+' 个（点开看每个模型的评分）</summary><div class="models-list">'+a.models.map(function(m){ return '<div class="m-row"><div class="m-head"><span class="m-name">'+m.n+'</span><span class="m-total">'+mOverall(m.s)+' 分</span></div><div class="scores">'+bars(m.s)+'</div><div class="m-note">'+m.d+'</div></div>'; }).join("")+'</div></details>'
+      +'<details><summary>领取 / 接入步骤</summary>'+(a.url?'<a class="go-link" href="'+a.url+'" target="_blank" rel="noopener">'+(URL_LABEL[a.id]||'前往官方领取页')+' ↗</a>'+(API_NOTE[a.id]?'<p style="margin:6px 0 0">'+API_NOTE[a.id]+'</p>':''):'<p style="margin:6px 0 0">此条入口在客户端 / 控制台内，没有公开领取页，按下面步骤在客户端里找。</p>')+'<ol class="steps">'+a.steps.map(function(s){return "<li>"+s+"</li>";}).join("")+'</ol></details>'
+      +'<div class="card-actions">'
+      +(a.url?'<a class="btn primary" href="'+a.url+'" target="_blank" rel="noopener">'+(BTN_LABEL[a.id]||'去领取 ↗')+'</a>':'')
+      +'<button class="btn'+(a.url?'':' primary')+'" onclick="copySteps(\''+a.id+'\')">复制领取步骤</button></div>'
+      +'</article>';
+  }).join("");
+}
+function copySteps(id){
+  var a=null; for(var i=0;i<ACTIVITIES.length;i++) if(ACTIVITIES[i].id===id) a=ACTIVITIES[i];
+  var text=a.vendor+" "+a.title+"（"+a.quota+"，截止："+a.deadlineLabel+"）\n易薅·实用总分："+woolScore(a)+"（易薅 "+easeOf(a)+"/5 · 实用 "+topS(a,2)+"/5）\n免费模型与评分：\n"+(a.models||[]).map(function(m){return "· "+m.n+" —— "+mOverall(m.s)+" 分（智力 "+m.s[0]+" / 额度 "+m.s[1]+" / 实用 "+m.s[2]+"）";}).join("\n")+(a.url?"\n"+(BTN_LABEL[a.id]?"官方说明页：":"官方领取页：")+a.url:"")+(API_NOTE[a.id]?"\n"+API_NOTE[a.id]:"")+"\n领取步骤：\n"+a.steps.map(function(s,i){return (i+1)+". "+s;}).join("\n")+"\n到期监控："+a.expiry+"\n限制："+a.limits;
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(function(){showToast("领取步骤已复制");},function(){showToast("复制失败，请展开步骤手动记录");}); }
+  else showToast("当前环境不支持复制，请展开步骤手动记录");
+}
+function showToast(msg){ var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(function(){t.classList.remove("show");},2200); }
+
+function renderBoard(){
+  var rows = ACTIVITIES.slice().sort(function(x,y){
+    var kx = x.deadline ? daysLeft(x.deadline) : (x.type==="disputed" ? 9000 : (x.reset ? 9500 : 9900));
+    var ky = y.deadline ? daysLeft(y.deadline) : (y.type==="disputed" ? 9000 : (y.reset ? 9500 : 9900));
+    return kx-ky;
+  });
+  document.getElementById("expiryBoard").innerHTML = rows.map(function(a){
+    var badge, when;
+    if(a.deadline){
+      var dl = Math.ceil(daysLeft(a.deadline));
+      badge = dl<0 ? '<span class="badge badge-grey">已结束</span>' : (dl<=2 ? '<span class="badge badge-red">临期 · 48h 内</span>' : (dl<=7 ? '<span class="badge badge-amber">7 天内到期</span>' : '<span class="badge badge-green">倒计时中</span>'));
+      when = '<span data-deadline="'+a.deadline+'">计算中</span>';
+    } else if(a.type==="disputed"){
+      badge = '<span class="badge badge-red">争议 / 政策已变</span>'; when = '待人工核实';
+    } else if(a.reset==="daily"){
+      badge = '<span class="badge badge-green">每日重置</span>'; when = '<span data-reset="daily">计算中</span>';
+    } else if(a.reset==="monthly"){
+      badge = '<span class="badge badge-green">每月重置</span>'; when = '<span data-reset="monthly">计算中</span>';
+    } else {
+      badge = '<span class="badge badge-grey">长期监测</span>'; when = '无固定到期日';
+    }
+    return '<div class="b-row"><b>'+a.vendor+' · '+a.title+'</b>'+badge+'<span class="when">'+when+'</span></div>';
+  }).join("");
+  var flat = [];
+  ACTIVITIES.forEach(function(a){ (a.models||[]).forEach(function(m){ flat.push({a:a, m:m}); }); });
+  flat.sort(function(x,y){ return mOverall(y.m.s)-mOverall(x.m.s); });
+  var top = flat.slice(0,8);
+  document.getElementById("leaderboard").innerHTML = top.map(function(e,i){
+    return '<div class="lb-row"><span class="lb-rank">'+(i+1)+'</span><span><b>'+e.m.n+'</b><br><span style="color:var(--muted);font-size:12.5px">'+e.a.vendor+' · '+e.a.title+' · '+e.a.quota+' · 活动总分 '+woolScore(e.a)+'</span></span><span class="lb-bars">'+bars(e.m.s)+'</span><span class="lb-total">'+mOverall(e.m.s)+'</span></div>';
+  }).join("");
+}
+
+var vendorSel=document.getElementById("vendorSel");
+var vendors=[]; ACTIVITIES.forEach(function(a){ if(vendors.indexOf(a.vendor)===-1) vendors.push(a.vendor); });
+vendorSel.innerHTML='<option value="all">全部厂商</option>'+vendors.map(function(v){return '<option>'+v+'</option>';}).join("");
+vendorSel.addEventListener("change",function(e){state.vendor=e.target.value;render();});
+document.getElementById("search").addEventListener("input",function(e){state.query=e.target.value;render();});
+document.getElementById("sortSel").addEventListener("change",function(e){state.sort=e.target.value;render();});
+document.getElementById("catChips").addEventListener("click",function(e){
+  if(e.target.tagName!=="BUTTON")return;
+  var btns=this.querySelectorAll(".chip"); for(var i=0;i<btns.length;i++) btns[i].classList.remove("active");
+  e.target.classList.add("active"); state.cat=e.target.getAttribute("data-cat"); render();
+});
+
+function fmtDiff(diff){
+  if(diff<=0) return "已截止";
+  var d=Math.floor(diff/86400000), h=Math.floor(diff%86400000/3600000), m=Math.floor(diff%3600000/60000), s=Math.floor(diff%60000/1000);
+  return d+"天 "+String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
+function tick(){
+  var now=new Date();
+  var els=document.querySelectorAll("[data-deadline]");
+  for(var i=0;i<els.length;i++){ els[i].textContent=fmtDiff(new Date(els[i].getAttribute("data-deadline"))-now); }
+  var rs=document.querySelectorAll("[data-reset]");
+  for(var j=0;j<rs.length;j++){
+    var target;
+    if(rs[j].getAttribute("data-reset")==="monthly"){ target=new Date(now.getFullYear(), now.getMonth()+1, 1); }
+    else { target=new Date(now.getFullYear(), now.getMonth(), now.getDate()+1); }
+    rs[j].textContent=fmtDiff(target-now);
+  }
+}
+render(); renderBoard(); tick(); setInterval(tick,1000);
+</script>
+</body>
+</html>
