@@ -1,0 +1,22 @@
+# 两个服务，分工明确（推荐）：
+# - web：只负责生成并提供静态页面（端口 8080）
+# - checker：只负责定时检查（约 08:30 / 13:00 / 18:30 Asia/Shanghai），
+#   用 app/scheduler.py 的循环等待，不依赖容器内 cron。
+# 单服务替代方案见 README：只起 web，并用宿主机 cron 定时
+# `docker compose run --rm checker python app/check.py`。
+services:
+  web:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    restart: unless-stopped
+  checker:
+    build: .
+    command: ["python", "app/scheduler.py"]
+    env_file:
+      - .env
+    volumes:
+      - ./state:/app/state
+    restart: unless-stopped
