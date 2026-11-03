@@ -2,6 +2,7 @@
 if it is missing, then serves the dist/ directory with the stdlib server.
 
 Python stdlib only. Usage: python3 app/serve.py [port, default 8080]
+Bind address defaults to 0.0.0.0; set HOST to restrict it (e.g. a Tailscale IP).
 """
 import os
 import sys
@@ -19,8 +20,9 @@ def main():
         from app.generate import main as generate
         generate()
     os.chdir(dist)
-    server = ThreadingHTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
-    print(f"serving {dist} on http://0.0.0.0:{port}")
+    host = os.environ.get("HOST", "0.0.0.0")
+    server = ThreadingHTTPServer((host, port), SimpleHTTPRequestHandler)
+    print(f"serving {dist} on http://{host}:{port}")
     server.serve_forever()
 
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Run AI Wool Radar check three times a day
+
+[Timer]
+OnCalendar=*-*-* 08:30:00
+OnCalendar=*-*-* 13:00:00
+OnCalendar=*-*-* 18:30:00
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

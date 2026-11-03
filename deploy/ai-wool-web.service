@@ -1,0 +1,23 @@
+[Unit]
+Description=AI Wool Radar - static web page
+Documentation=https://github.com/littlepawn/ai-wool-radar
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/ai-wool
+# 只绑定本机回环；对外请用反向代理。若走 Tailscale，可改成 HOST=100.x.y.z。
+Environment=HOST=127.0.0.1
+Environment=PORT=8080
+ExecStart=/usr/bin/python3 /opt/ai-wool/app/serve.py 8080
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ai-wool/dist
+
+[Install]
+WantedBy=multi-user.target

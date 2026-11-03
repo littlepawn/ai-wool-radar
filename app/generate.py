@@ -18,6 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "offers.json"
+ASSETS = ROOT / "assets"
 OUT_DEFAULT = ROOT / "dist" / "index.html"
 
 # Known non-claim URLs that must never be labelled "去领取".
@@ -143,7 +144,11 @@ def main():
     )
     html = f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI 羊毛监控雷达（独立版）</title>
+<meta name="description" content="每日巡检官方页面的 AI 免费额度雷达：额度、截止日与模型评分只有一份事实源。">
+<meta name="theme-color" content="#0b1220">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-128.png">
+<title>AI 羊毛雷达</title>
 <style>
 body{{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:1080px;margin:0 auto;padding:16px;line-height:1.6}}
 .card{{border:1px solid #ddd;border-radius:12px;padding:16px;margin:16px 0;position:relative}}
@@ -156,7 +161,7 @@ body{{font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-s
 .claim.muted{{background:#eee;color:#333}}
 input,select{{padding:8px;margin:4px}}
 </style></head><body>
-<h1>AI 羊毛监控雷达（独立版）</h1>
+<h1>AI 羊毛雷达</h1>
 <p>数据来源：<code>data/offers.json</code>（单一事实源）。额度/截止日只写已核实内容，未核实标注“待核实”，不编造。
 模型分与羊毛总分为编辑评分，非官方数据。纳入标准：免费额度本身要求绑卡/绑支付方式/预充值的，不纳入。</p>
 <p><label>搜索 <input id="q" placeholder="搜厂商 / 活动 / 模型"></label>
@@ -204,6 +209,10 @@ function apply(){{
 </script></body></html>"""
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
+    for name in ("icon.svg", "icon-128.png"):
+        src = ASSETS / name
+        if src.exists():
+            (out.parent / name).write_bytes(src.read_bytes())
     print(f"wrote {out} ({len(offers)} offers)")
 
 

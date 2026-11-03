@@ -1,148 +1,169 @@
-# AI 羊毛监控雷达（独立版）
+<div align="center">
+  <img src="assets/icon.svg" width="112" alt="AI Wool Radar">
+  <h1>AI 羊毛雷达</h1>
+  <p><strong>每天巡检官方页面，把值得薅的 AI 免费额度整理成一张可筛选的表。</strong></p>
+  <p>
+    <img alt="Python" src="https://img.shields.io/badge/Python-3.9%2B-3776AB?logo=python&logoColor=white">
+    <img alt="Dependencies" src="https://img.shields.io/badge/dependencies-stdlib--only-0f766e">
+    <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white">
+    <img alt="Data" src="https://img.shields.io/badge/offers-26-38bdf8">
+  </p>
+</div>
 
-一个**纯 Python 标准库、无外部依赖**的免费 AI 额度监控站：
-数据只有一份（`data/offers.json`），生成器把它渲染成静态网页，
-检查器定期抓取官方/雷达源做变化对比，只在“新变化 / 临期 48 小时内”
-时才推送，且同一条临期只推一次。
+![页面预览](docs/preview.png)
 
-> 本项目是原“AI 羊毛监控网页”的独立重构版，不改动原线上页面。
-> 额度、截止日只写已核实内容，未核实一律标“待核实”，不编造。
-> 不要把任何真实 Token / 密钥贴进代码、文档或聊天记录。
+## 简介
 
-## 监控什么
+AI 羊毛雷达（AI Wool Radar）是一个**纯 Python 标准库、无第三方依赖**的免费 AI 额度监控站。
+它把活动、额度、截止日、领取链路和编辑评分集中在一个 JSON 文件里，生成静态页面，
+并定期巡检官方来源，只在“内容有变化”或“48 小时内到期”时提醒。
 
-- **国内大厂**：智谱 AutoClaw、阿里 Qoder / 百炼、腾讯 TokenHub、
-  火山方舟、科大讯飞星火 MaaS、七牛云 Conatus、豆包签到、MiniMax 等。
-- **海外大厂**：Cloudflare Workers AI（每日 10,000 Neurons，UTC 00:00 重置）、
-  Agnes Flash（文本/生图/生视频）、Google AI Studio、Groq、OpenRouter `:free`
-  （20 RPM / 每日 50 次）、NVIDIA Build、Hugging Face 等。
-- **生图 / 生视频**：即梦、可灵、海螺、Leonardo、Firefly、PixVerse、Runway 等。
-- **类型**：一次性领取、本身就免费（常驻）、每日/每月签到重置，三类分开筛选。
+项目当前收录 **26 条**免费额度，覆盖国内大厂与海外平台，包含文本、生图、生视频三类能力。
 
-## 纳入标准：绑卡不纳入
+> 所有额度与截止日只写已核实内容；未核实项一律标注“待核实”。模型评分是编辑评分，
+> 不是厂商官方数据。
 
-**免费额度本身要求绑卡、绑支付方式验证或预充值的，不纳入。**
-有付费升级选项、但免费层本身不用绑卡的，可以纳入（例如 OpenRouter
-累计购买满 $10 只是提高上限，不是免费前提）。
-被剔除的条目会在页面“争议与已排除”里留名并写原因，例如：
+## 特性
 
-- Cerebras：免费层新增支付方式验证，已剔除；
-- Pollinations：已改为 pollen 余额计费，已剔除；
-- GitHub Models：已于 2026-07-30 退役，已剔除。
+- **单一事实源**：`data/offers.json` 是唯一数据入口，页面、评分、倒计时全部由它派生。
+- **零依赖运行**：生成、检查、推送、静态服务全部使用 Python 标准库，不需要 pip 安装。
+- **每日巡检**：默认在 08:30 / 13:00 / 18:30（Asia/Shanghai）抓取官方页面并比对文本哈希。
+- **到期提醒**：只对固定截止日做 48 小时预警，同一条活动只提醒一次；相对期限不硬算。
+- **多渠道推送**：Bark、Server酱、Telegram、企业微信、飞书、钉钉、ntfy、Gotify 等。
+- **可审计数据**：每条记录保留领取步骤、核实状态、争议说明与排除原因。
+- **纳入标准明确**：免费额度本身要求绑卡、绑支付方式或预充值的活动不纳入。
 
-## 评分公式（编辑评分，非官方）
+## 快速开始
 
-- **具体模型分**：智力 / 额度 / 实用性各 1–5 分。
-  只有具名模型才有模型分；“平台内各语言模型（逐个领）”这类泛称
-  **不打模型分**（见 `BUGS.md` 第 1 条）。
-- **羊毛总分（卡片右上角）**：易薅 45% + 实用 55%，满分 100 分。
-  公式：`易薅×20×0.45 + 最值得用模型实用性×20×0.55`
-  （无具名模型时用活动级实用性代入，并在数据里注明）。
-  易薅看领取摩擦（注册即用 5 分、每日手动领/客户端 3 分、多步迁移或有争议 2 分等）；
-  实用看额度好不好用、有无水印/商用限制等。
-- **到期监控**：固定截止日跑倒计时（页面上所有倒计时都由同一个
-  `data-deadline` 时间戳派生，不会出现“59 天”和“58 天 14:39”两种取整）；
-  每日/每月型跑重置提示；无固定截止日只写“无固定截止日”，不编造日期。
-
-## 目录结构
-
-```
-app/generate.py   # 从 offers.json 生成 dist/index.html（唯一渲染入口）
-app/check.py      # 抓取对比 + 48h 临期检测 + 去重推送
-app/notify.py     # 推送模块（见下）
-app/serve.py      # 静态服务器（启动时若缺 dist 则先生成）
-app/scheduler.py  # 检查器定时循环：08:30 / 13:00 / 18:30 Asia/Shanghai
-data/offers.json  # 唯一事实源：活动、额度、截止日、模型分、争议、已排除
-data/sources.json # 检查器抓取的官方/雷达源列表
-state/seen.json   # 检查器状态（已忽略，不进 Git）
-dist/index.html   # 生成产物（已忽略，不进 Git）
-```
-
-## 本地运行（不需要 Docker）
+### Docker（推荐）
 
 ```sh
-chmod +x run.sh
-./run.sh            # 生成页面并在 http://localhost:8080 提供服务
-# 或手动：
-python3 app/generate.py
-python3 app/serve.py 8080
-```
-
-## Docker 运行
-
-```sh
-cp .env.example .env    # 按需填推送渠道（见下），不填则只看页面、不推送
+git clone https://github.com/littlepawn/ai-wool-radar.git
+cd ai-wool-radar
+cp .env.example .env          # 不配置推送渠道也能只看页面
 docker compose up --build -d
-# 页面：http://localhost:8080
-# 只起页面服务：docker compose up --build -d web
 ```
 
-部署方式说明（已选定，不含糊）：`docker-compose.yml` 是**两个服务**——
-`web` 只服务页面，`checker` 只跑 `app/scheduler.py` 定时检查。
-单服务替代方案：只起 `web`，并用宿主机 cron 在约 08:30 / 13:00 / 18:30
-执行 `docker compose run --rm checker python app/check.py`。
-镜像基于 `python:3.12-slim`、非 root 用户运行，Python 标准库，无外部依赖。
+打开 <http://localhost:8080>。
 
-## 检查器
+`docker compose` 包含两个服务：
+
+| 服务 | 作用 |
+|---|---|
+| `web` | 生成并提供静态页面 |
+| `checker` | 按 08:30 / 13:00 / 18:30 的节奏运行巡检 |
+
+只想要页面时，运行 `docker compose up --build -d web` 即可。
+
+### 本地运行
+
+需要 Python 3.9+，不需要安装任何包。
+
+```sh
+python3 app/generate.py       # 从 data/offers.json 生成 dist/index.html
+python3 app/serve.py 8080     # 启动静态服务
+```
+
+也可以直接执行 `./run.sh`，它会先生成页面再启动服务。
+
+## 巡检与推送
 
 ```sh
 python3 app/check.py --dry-run   # 只打印发现，不写状态、不推送
-python3 app/check.py             # 正式跑：写 state/seen.json，临期才推送
-NOTIFY_DRY_RUN=1 python3 app/check.py
+python3 app/check.py             # 正式运行：写入 state/seen.json，必要时推送
+python3 app/scheduler.py         # 常驻进程，按固定时段触发检查
 ```
 
-去重规则：同一条临期（`expiry:<offer-id>`）只推一次；
-来源内容变化只记为“需人工核对”，不直接当成“新活动”推送；
-抓取失败记为“待人工复核”，绝不等于“无活动”；
-未变的常驻免费层不重复推送。
+推送渠道全部通过环境变量配置，完整清单见 [`.env.example`](.env.example)。
+常用渠道：
 
-## 推送配置（全部只用环境变量）
-
-先演练，再开启真实推送：
-
-```sh
-python3 -m app.notify --dry-run --title "测试" --body "这是一条演练，不会真的发出去"
-python3 -m app.notify --dry-run --only bark,telegram --title "测试" --body "演练"
-```
-
-| 渠道 | 关键环境变量 |
+| 渠道 | 环境变量 |
 |---|---|
 | Bark | `BARK_URL` 或 `BARK_SERVER` + `BARK_KEY` |
 | Server酱 Turbo | `SCT_SENDKEY` |
-| PushPlus | `PUSHPLUS_TOKEN` |
-| 企业微信群机器人 | `WECOM_WEBHOOK_URL` |
-| 钉钉群机器人（签名） | `DINGTALK_WEBHOOK_URL` + `DINGTALK_SECRET` |
-| 飞书群机器人（签名） | `FEISHU_WEBHOOK_URL` + `FEISHU_SECRET` |
-| Telegram Bot | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` |
-| ntfy | `NTFY_URL`（话题地址），可选 `NTFY_TOKEN` |
-| Gotify | `GOTIFY_URL` + `GOTIFY_TOKEN` |
-| Discord Webhook | `DISCORD_WEBHOOK_URL` |
-| Slack Webhook | `SLACK_WEBHOOK_URL` |
-| 邮件 SMTP | `SMTP_HOST` / `SMTP_PORT` / `SMTP_TLS` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` / `SMTP_TO` |
-| 通用 Webhook | `WEBHOOK_URL`，可选 `WEBHOOK_TOKEN` |
-| WxPusher | `WXPUSHER_APP_TOKEN` + `WXPUSHER_UIDS`（英文逗号分隔） |
-| PushDeer | `PUSHDEER_KEY`，可选 `PUSHDEER_SERVER` |
+| Telegram | `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` |
+| 企业微信 | `WECOM_WEBHOOK_URL` |
+| 飞书 | `FEISHU_WEBHOOK_URL` + `FEISHU_SECRET` |
+| ntfy | `NTFY_URL`，可选 `NTFY_TOKEN` |
 
-实现约定（`app/notify.py`）：`send(title, body, url)` 统一入口，
-每个渠道一个独立小函数；某个渠道失败不阻塞其他渠道；
-`--dry-run` 只打印“会发什么”（密钥已打码），不发任何请求。
-
-## 推到 GitHub（只给命令，不执行）
-
-由仓库主人自己决定仓库名与可见性（公开/私有），本项目不替你选，
-也不要求你在聊天里贴任何 Token：
+建议先演练，确认输出格式后再开启真实推送：
 
 ```sh
-cd ai-wool-radar
-git init
-git add .
-git commit -m "AI 羊毛监控雷达：独立重构版"
-git branch -M main
-git remote add origin https://github.com/<你的用户名>/<仓库名>.git
-git push -u origin main
+python3 -m app.notify --dry-run --title "测试" --body "这是一条演练，不会真的发出去"
 ```
 
-> 注意：`git push` 需要你本人在 GitHub 上先建好同名空仓库；
-> `.env` 与 `state/` 已在 `.gitignore` 里，不会被提交。
-> 如果你在浏览器里登录 GitHub，请在浏览器接管流程中自己完成登录，
-> 不要把密码或 Token 发给任何对话方。
+## 数据与评分
+
+`data/offers.json` 的结构：
+
+| 字段 | 说明 |
+|---|---|
+| `offers[]` | 活动列表，包含厂商、额度、类型、领取步骤、截止日、核实状态 |
+| `offers[].models[]` | 具名模型的智力 / 额度 / 实用性评分（1–5） |
+| `disputed[]` | 来源口径冲突，保留原文说明 |
+| `excluded[]` | 已剔除活动及原因 |
+| `meta` | 评分公式与数据口径 |
+
+**羊毛总分** = 易薅 × 20 × 45% + 最值得用模型实用性 × 20 × 55%。
+没有具名模型时，使用活动级实用性代入，并明确说明不对平台泛称打分。
+
+数据维护是人工审核制：检查器只负责发现变化，是否入库、如何改写仍由维护者判断。
+
+## 部署到 Linux（systemd）
+
+仓库自带 `deploy/` 下的示例单元，默认安装到 `/opt/ai-wool`。
+按实际路径调整后执行：
+
+```sh
+sudo install -d /opt/ai-wool
+sudo cp -a app data assets run.sh /opt/ai-wool/
+sudo cp deploy/ai-wool-web.service deploy/ai-wool-check.service deploy/ai-wool-check.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now ai-wool-web.service ai-wool-check.timer
+```
+
+默认只监听 `127.0.0.1:8080`。如果要通过 Tailscale 内网访问，把
+`ai-wool-web.service` 里的 `HOST` 改成对应的 `100.x.y.z`，不要直接暴露到公网。
+
+推送凭证放在 `/etc/ai-wool.env`（权限 `600`），不要写进仓库或单元文件。
+
+## 目录结构
+
+```text
+.
+├── app/
+│   ├── generate.py    # JSON → 静态页面
+│   ├── check.py       # 抓取对比、临期检测、去重推送
+│   ├── notify.py      # 多渠道推送
+│   ├── scheduler.py   # 定时循环
+│   └── serve.py       # 标准库静态服务器
+├── data/
+│   ├── offers.json    # 唯一事实源
+│   └── sources.json   # 巡检来源
+├── deploy/            # systemd 示例
+├── assets/            # 项目图标
+├── docs/              # 页面预览
+├── state/             # 检查器状态（不入库）
+└── dist/              # 生成产物（不入库）
+```
+
+## 安全
+
+- `.env`、`state/`、`dist/` 已在 `.gitignore` 中排除。
+- 推送模块只从环境变量读取凭证，`--dry-run` 会对密钥打码。
+- 巡检只访问公开页面，不登录、不代领、不绕过任何验证。
+- 抓取失败会记为“待人工复核”，不会被当成“没有活动”。
+
+## 已知问题
+
+历史问题与修复记录见 [`BUGS.md`](BUGS.md)，包括泛称条目误评分、倒计时取整不一致、
+领取链接指向 API 地址等。
+
+## 免责声明
+
+本项目只汇总公开信息，不提供、不转售任何额度，也不保证活动长期有效。
+最终额度、资格与截止时间以厂商官方页面为准。
+
+## License
+
+本项目暂未声明开源许可证。如需复用、分发或商业使用，请先联系作者。

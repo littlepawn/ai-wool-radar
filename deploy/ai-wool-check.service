@@ -1,0 +1,19 @@
+[Unit]
+Description=AI Wool Radar - source change and expiry check
+Documentation=https://github.com/littlepawn/ai-wool-radar
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/ai-wool
+Environment=HOME=/root
+# 推送渠道只从环境变量读取；把凭证放在这个文件里，权限 600。
+EnvironmentFile=-/etc/ai-wool.env
+ExecStart=/usr/bin/python3 /opt/ai-wool/app/check.py
+TimeoutStartSec=1800
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ai-wool/state
