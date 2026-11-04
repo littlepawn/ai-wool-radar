@@ -179,6 +179,26 @@ def main():
         cands = json.loads((ROOT / "state" / "candidates.json").read_text(encoding="utf-8")).get("candidates", [])
     except Exception:
         cands = []
+    # 自动上架区与待核实区用同一批线索、按 status 分流展示。
+    auto_cands = [c for c in cands if c.get("status") == "auto_listed"]
+    cands = [c for c in cands if c.get("status") != "auto_listed"]
+    auto_html = "<li>暂无自动上架线索</li>"
+    if auto_cands:
+        auto_items = []
+        for c in auto_cands[:20]:
+            sc = c.get("score") or {}
+            def _s2(k):
+                v = sc.get(k)
+                return "—" if v is None else str(v)
+            auto_items.append(
+                f'<li><b>自动上架 · 未人工核实</b> '
+                f'{escape(c.get("source_name", c.get("source", "")))}：'
+                f'{escape(c.get("snippet", ""))} '
+                f'智力 {_s2("intelligence")} · 额度 {_s2("quota")} · '
+                f'实用 {_s2("practicality")} · 易薅 {_s2("ease")} '
+                f'（{escape(str(c.get("score_source") or "未评分"))}） '
+                f'<a href="{escape(c.get("url", ""))}" target="_blank" rel="noopener">看来源</a></li>')
+        auto_html = "".join(auto_items)
     if cands:
         items = []
         for c in cands[:20]:
@@ -260,6 +280,7 @@ section.panel h2{{margin-top:0}}
 <label>排序 <select id="sort"><option value="total">羊毛总分优先</option><option value="deadline">截止日优先</option><option value="name">名称</option></select></label>
 </div>
 <section id="cards">{cards}</section>
+<section class="panel"><h2>自动上架（未人工核实，仅供参考）</h2><p class="muted">容易确定的线索由服务自动列在这里；分数旁标注了 heuristic（启发式）或 ai:模型名。它们仍不是已核实活动，人工核对官方原文后才进主卡片。</p><ul>{auto_html}</ul></section>
 <section class="panel"><h2>自动发现 · 待核实（不是已核实活动）</h2><p class="muted">以下线索由服务自动从公开来源抓取、自动打分，未经人工核对官方原文前不得当成已核实活动；分数旁标注了 heuristic（启发式）或 ai:模型名。</p><ul>{candidates_html}</ul></section>
 <section class="panel"><h2>到期监控台</h2>
 <h3>固定截止日</h3><ul>{desk_fixed}</ul>

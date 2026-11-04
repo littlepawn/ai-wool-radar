@@ -1,11 +1,12 @@
-"""全功能服务（单进程、单容器）：自动发现 → 自动评估 → 自动刷新 → 提供页面。
+"""全功能服务（单进程、单容器）：自动发现 → 自动评估 → 自动上架 → 自动刷新 → 提供页面。
 
 一个进程完成整条流水线，仍只用 Python 标准库：
   1. 启动时先跑一次：发现 → 评估 → 生成 → 提供页面；
   2. 按北京时间档位（默认 08:30 / 13:00 / 18:30）循环：
      app/discover.py（找线索，只记 needs_review）
      → app/evaluate.py（启发式打分；配了 AI_API_KEY + AI_MODEL 才调 AI）
-     → app/generate.py（重新生成页面，含“自动发现 · 待核实”区）
+     → app/promote.py（容易确定的自动上架，难确定的留待人工审核）
+     → app/generate.py（重新生成页面，含自动上架区与待核实区）
      → app/check.py（来源变化对比 + 48 小时临期提醒，见原有规则）。
 
 关键边界（不要跨过）：
@@ -63,6 +64,7 @@ def run_step(name, script):
 def refresh_cycle():
     run_step("discover", "discover.py")
     run_step("evaluate", "evaluate.py")
+    run_step("promote", "promote.py")
     run_step("generate", "generate.py")
     if os.environ.get("SERVICE_CHECK", "1") != "0":
         run_step("check", "check.py")
