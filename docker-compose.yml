@@ -1,22 +1,15 @@
-# 两个服务，分工明确（推荐）：
-# - web：只负责生成并提供静态页面（端口 8080）
-# - checker：只负责定时检查（约 08:30 / 13:00 / 18:30 Asia/Shanghai），
-#   用 app/scheduler.py 的循环等待，不依赖容器内 cron。
-# 单服务替代方案见 README：只起 web，并用宿主机 cron 定时
-# `docker compose run --rm checker python app/check.py`。
+# 全功能版：只有一个服务。
+# wool：app/service.py 一个进程完成自动发现、自动评估、自动刷新与页面服务，
+# 档位为北京时间 08:30 / 13:00 / 18:30（可用 SERVICE_SLOTS 改）。
+# AI 评估是可选项：.env 里配了 AI_API_KEY + AI_MODEL 才调 AI，否则全走启发式。
 services:
-  web:
+  wool:
     build: .
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:8080"
     env_file:
-      - .env
-    restart: unless-stopped
-  checker:
-    build: .
-    command: ["python", "app/scheduler.py"]
-    env_file:
-      - .env
+      - path: .env
+        required: false
     volumes:
       - ./state:/app/state
     restart: unless-stopped
