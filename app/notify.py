@@ -29,6 +29,15 @@ import urllib.request
 from email.message import EmailMessage
 
 
+def _plain(text):
+    """把外部抓来的文本转义成纯文本，避免我们自己的通知里渲染出 <font> / @all。
+
+    markdown/html 渠道（企业微信、钉钉、飞书、pushplus）都吃 HTML 片段，
+    而这些文本来自被抓取的第三方页面，不转义就等于让对方决定通知长什么样。
+    """
+    return (str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
 def _mask(s):
     """Mask a secret for logs: keep at most a hint of its shape, never the value."""
     if not s:
@@ -93,7 +102,8 @@ def pushplus(title, body, url, dry_run=False):
     token = os.environ.get("PUSHPLUS_TOKEN", "")
     if not token:
         return _result("pushplus", False, "not configured (PUSHPLUS_TOKEN)", dry_run)
-    payload = {"token": token, "title": title, "content": f"{body}\n\n{url or ''}", "template": "html"}
+    payload = {"token": token, "title": title,
+               "content": f"{_plain(body)}\n\n{url or ''}", "template": "html"}
     if dry_run:
         return _result("pushplus", True, f"POST pushplus.plus/send payload=token={_mask(token)} title={title}", dry_run)
     try:
@@ -106,7 +116,8 @@ def wecom(title, body, url, dry_run=False):
     hook = os.environ.get("WECOM_WEBHOOK_URL", "")
     if not hook:
         return _result("wecom", False, "not configured (WECOM_WEBHOOK_URL)", dry_run)
-    payload = {"msgtype": "markdown", "markdown": {"content": f"## {title}\n{body}\n{url or ''}"}}
+    payload = {"msgtype": "markdown",
+               "markdown": {"content": f"## {_plain(title)}\n{_plain(body)}\n{url or ''}"}}
     if dry_run:
         return _result("wecom", True, f"POST {_mask(hook)} payload={payload}", dry_run)
     try:

@@ -67,11 +67,20 @@ def validate(data):
     return offers
 
 
+def iso_local(value):
+    """把 data-deadline 用的 ISO 串统一成 +0800 形式。
+
+    Safari/iOS 对 "+08:00" 这种带冒号的偏移会返回 Invalid Date，
+    倒计时就会显示成 NaN；"+0800" 两家都认。
+    """
+    return str(value).replace("+08:00", "+0800")
+
+
 def render_card(o):
     total = o["wool_total"]
     badge = f'<span class="wool-score" title="易薅 45% + 实用 55%">易薅·实用 {total}</span>' \
         if total is not None else '<span class="wool-score muted">未评分</span>'
-    deadline_attr = f' data-deadline="{escape(o["deadline"])}"' if o.get("deadline") else ""
+    deadline_attr = f' data-deadline="{escape(iso_local(o["deadline"]))}"' if o.get("deadline") else ""
     deadline_text = ""
     if o.get("deadline"):
         deadline_text = f'<p class="expiry" data-expiry{deadline_attr}>' \
@@ -106,7 +115,7 @@ def render_card(o):
     return f"""
 <article class="card" data-region="{o["region"]}" data-category="{o["category"]}"
   data-kind="{o["kind"]}" data-total="{total if total is not None else -1}"
-  data-deadline="{escape(o.get("deadline") or "9999")}"
+  data-deadline="{escape(iso_local(o.get("deadline") or "9999"))}"
   data-name="{escape(o["name"])}">
   <div class="card-top"><span class="tag">{escape(o["vendor"])} · {'国内' if o["region"] == 'domestic' else '海外'}</span>{badge}</div>
   <h2>{escape(o["name"])}</h2>
@@ -152,7 +161,7 @@ def main():
                    key=lambda o: o["deadline"])
     desk_fixed = "".join(
         f'<li><b>{escape(o["vendor"])} {escape(o["name"])}</b> '
-        f'<span class="expiry" data-expiry data-deadline="{escape(o["deadline"])}">'
+        f'<span class="expiry" data-expiry data-deadline="{escape(iso_local(o["deadline"]))}">'
         f'截止 {escape(o["deadline"][:10])} · <span class="countdown">计算中…</span></span></li>'
         for o in fixed) or "<li>暂无固定截止日活动</li>"
     desk_daily = "".join(

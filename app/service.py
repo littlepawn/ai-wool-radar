@@ -56,9 +56,17 @@ def next_slot(now, slots):
     return nxt.replace(hour=slots[0][0], minute=slots[0][1], second=0, microsecond=0)
 
 
+STEP_TIMEOUT = int(os.environ.get("SERVICE_STEP_TIMEOUT", "1200"))
+
+
 def run_step(name, script):
     print(f"[service] {name}", flush=True)
-    subprocess.run([sys.executable, str(ROOT / "app" / script)], check=False)
+    try:
+        subprocess.run([sys.executable, str(ROOT / "app" / script)],
+                       check=False, timeout=STEP_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        # 单步卡死（多半是外部站点不响应）不该拖死整轮：记一条，继续下一步。
+        print(f"[service] {name} 超时（>{STEP_TIMEOUT}s），跳过", flush=True)
 
 
 def refresh_cycle():
@@ -80,16 +88,33 @@ def loop(slots):
         refresh_cycle()
 
 
+class _DistHandler(SimpleHTTPRequestHandler):
+    """只发文件，不列目录：目录没有 index 时也绝不把文件清单吐出去。"""
+
+    def list_directory(self, path):
+        self.send_error(403, "forbidden")
+        return None
+
+
+def first_cycle():
+    try:
+        refresh_cycle()
+    except Exception as e:                      # 首轮失败不该让服务起不来
+        print(f"[service] 首轮流水线出错：{type(e).__name__}: {e}", flush=True)
+
+
 def main():
     port = int(os.environ.get("PORT", "8080"))
     host = os.environ.get("HOST", "0.0.0.0")
     dist = ROOT / "dist"
-    refresh_cycle()
+    # 先把 HTTP 服务起起来，再在后台跑首轮流水线：
+    # 首轮要抓 8 个源 + 可能调 AI，几十秒到几分钟，先服务能让健康检查立刻通过。
     dist.mkdir(parents=True, exist_ok=True)
-    threading.Thread(target=loop, args=(parse_slots(),), daemon=True).start()
-    handler = partial(SimpleHTTPRequestHandler, directory=str(dist))
+    handler = partial(_DistHandler, directory=str(dist))
     server = ThreadingHTTPServer((host, port), handler)
     print(f"[service] serving {dist} on http://{host}:{port}", flush=True)
+    threading.Thread(target=first_cycle, daemon=True).start()
+    threading.Thread(target=loop, args=(parse_slots(),), daemon=True).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:

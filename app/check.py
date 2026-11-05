@@ -53,7 +53,8 @@ def parse_deadline(value):
     except ValueError:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        # 数据里的截止日全是北京时间；裸日期按 UTC 补会让临期判断差 8 小时。
+        dt = dt.replace(tzinfo=timezone(timedelta(hours=8)))
     return dt
 
 
@@ -102,8 +103,12 @@ def main(argv=None):
         if dry_run:
             print(f"[dry-run] would push: {title}\n{body}")
         else:
-            for r in notify_send(title, body):
-                print(f"[{r['channel']}] ok={r['ok']} :: {r['detail']}")
+            try:
+                for r in notify_send(title, body):
+                    print(f"[{r['channel']}] ok={r['ok']} :: {r['detail']}")
+            except Exception as e:
+                # 推送炸了也要把 state 写下去，否则下次把同一条临期再推一遍。
+                print(f"push failed: {type(e).__name__}: {e}", flush=True)
     else:
         print("无临期推送；其余发现仅记录/待人工复核：")
     for f in findings:
